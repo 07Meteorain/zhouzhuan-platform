@@ -73,9 +73,12 @@ function walk(dir, base) {
 }
 // 排除项：数据库（含 WAL/SHM）、git 内部目录、临时文件
 // 特别注意 data/platform.db 不能上传，那是运行时数据，且不应进版本库
-const EXCLUDE = [/^\.git\//, /^data\/platform\.db/, /\.db-shm$/, /\.db-wal$/, /(^|\/)\.DS_Store$/, /(^|\/)ghtest\.js$/];
+// 另外 .github/ 前缀被 GitHub Contents API 拒绝（404），只能通过 git push 上传，本脚本跳过
+const EXCLUDE = [/^\.git\//, /^data\/platform\.db/, /\.db-shm$/, /\.db-wal$/, /(^|\/)\.DS_Store$/, /(^|\/)ghtest\.js$/, /^\.github\//];
 const files = walk(ROOT).filter(f => !EXCLUDE.some(re => re.test(f.split(path.sep).join('/'))));
 log('待上传文件：' + files.length + ' 个（已排除数据库等运行时文件）');
+const skipped = walk(ROOT).filter(f => f.split(path.sep).join('/').startsWith('.github/'));
+if (skipped.length) log('跳过 ' + skipped.length + ' 个 .github 文件：Contents API 不支持该路径，需用 git push 上传');
 const leaked = files.filter(f => /platform\.db/.test(f));
 if (leaked.length) { log('警告：检测到数据库文件，已中止！' + leaked.join(', ')); process.exit(1); }
 
