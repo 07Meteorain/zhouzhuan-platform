@@ -1,0 +1,19 @@
+{
+  "_说明": "公网演示数据，全部为脱敏后的虚构内容，与真实校内台账无关。真实台账仅存在于本地 data/platform.db，不进版本库。",
+  "_脱敏说明": "负责人姓名、电话、存放地点均已替换为虚构值；物资名称与规格保留真实分类以保证演示真实感。",
+  "users": [
+    {"id": 1, "username": "stu001", "name": "张同学", "role": "student", "dept": "计算机学院"},
+    {"id": 2, "username": "stu002", "name": "李同学", "role": "student", "dept": "材料学院"},
+    {"id": 3, "username": "mentor01", "name": "王老师", "role": "mentor", "dept": "计算机学院"},
+    {"id": 4, "username": "mentor02", "name": "刘老师", "role": "mentor", "dept": "材料学院"},
+    {"id": 5, "username": "adm001", "name": "资产管理员", "role": "asset_admin", "dept": "财务资产处"},
+
+    {"id": 7, "username": "wh001", "name": "赵老师", "role": "warehouse", "dept": "资产处"},
+    {"id": 8, "username": "wh002", "name": "周老师", "role": "warehouse", "dept": "资产处"},
+    {"id": 9, "username": "wh003", "name": "孙老师", "role": "warehouse", "dept": "资产处"},
+    {"id": 10, "username": "wh004", "name": "田径场组王师傅", "role": "warehouse", "dept": "体育部", "phone": "13900000010"},
+    {"id": 11, "username": "wh005", "name": "活动中心刘师傅", "role": "warehouse", "dept": "团委", "phone": "13900000011"},
+    {"id": 12, "username": "wh006", "name": "车队楼张师傅", "role": "warehouse", "dept": "后勤集团", "phone": "13900000012"}
+  ],
+  "materials": []
+}

@@ -86,7 +86,7 @@ const login = async (username) => {
   const mats = await call('GET', '/api/materials', undefined, stu);
   eq(mats.data.length, 18, `学生可见 18 种物资（实际 ${mats.data.length}）`);
   const whMats = await call('GET', '/api/materials', undefined, wh);
-  ok(whMats.data.every(m => m.owner_name === '车队楼张巧玲'),
+  ok(whMats.data.every(m => m.owner_name === '车队楼张师傅'),
     '张巧玲只看到自己负责的物资（' + whMats.data.length + ' 种）');
   ok(whMats.data.length < 18, '仓库老师看不到全部物资');
   const otherMats = await call('GET', '/api/materials', undefined, whOther);
@@ -109,7 +109,7 @@ const login = async (username) => {
   ok(create.status === 200, '学生提交申领成功');
   const r1 = create.data;
   eq(r1.status_text, '待导师审批', '新单进入待导师审批');
-  eq(r1.owner_name, '车队楼张巧玲', '单据已按物资路由到负责老师');
+  eq(r1.owner_name, '车队楼张师傅', '单据已按物资路由到负责老师');
   ok(/^ZX\d{8}-\d{3}$/.test(r1.code), '单号格式规范：' + r1.code);
   const oversell = await call('POST', '/api/requests', {
     material_id: target.id, apply_qty: 999999, purpose: '越界测试',
@@ -240,7 +240,7 @@ const login = async (username) => {
   const assignDenied = await call('POST', '/api/materials', { id: target.id, owner_id: whOtherId(1) }, stu);
   ok(assignDenied.status === 400, '学生不可改绑负责人');
   const others = await call('GET', '/api/warehouse/staff', undefined, adm);
-  const newOwner = others.data.find(s => s.name !== '车队楼张巧玲');
+  const newOwner = others.data.find(s => s.name !== '车队楼张师傅');
   const assign = await call('POST', '/api/materials', { id: target.id, owner_id: newOwner.id }, adm);
   eq(assign.data.owner_name, newOwner.name, '负责人改绑立即生效');
   const newOwnerMats = await call('GET', '/api/materials', undefined, newOwner.username === 'wh006' ? wh : await login(newOwner.username));

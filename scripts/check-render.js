@@ -102,7 +102,7 @@ function loadPageFunctions() {
   const myMats = await api('/api/materials');
   const whHtml = F.warehouseView([], myMats);
   const wc = (whHtml.match(/class="mcard"/g) || []).length;
-  ok(wc === myMats.length, `张巧玲名下 ${myMats.length} 种，卡片渲染 ${wc} 张`);
+  ok(wc === myMats.length, `张师傅名下 ${myMats.length} 种，卡片渲染 ${wc} 张`);
   TOKEN = saveTok;
 
   console.log('\n[6] 管理员视图与固定资产接口已下线');
@@ -155,7 +155,7 @@ console.log('\n[7] 归还流程渲染');
     id: 9, code: 'ZX20261014-009', material_name: '塑料凳', size: '标准',
     status: 'return_submitted', status_text: '待老师清点', unit: '个',
     applicant_no: '20230101', applicant_name: '张同学', borrower: '张同学', phone: '13800000000',
-    material_category: '家具', location: '车队三楼', owner_name: '车队楼张巧玲', owner_phone: '13900000000',
+    material_category: '家具', location: '车队三楼', owner_name: '车队楼张师傅', owner_phone: '13900000000',
     use_start: '2026-10-15', use_end: '2026-10-20', purpose: '社团活动', deposit_note: '学生证',
     apply_qty: 60, approved_qty: 60, issued_qty: 60, return_declared_qty: 55, returned_qty: null, missing_qty: 0,
     return_photos: '["p1.jpg","p2.jpg"]',

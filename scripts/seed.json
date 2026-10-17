@@ -1,4 +1,6 @@
 {
+ "_说明": "公网演示数据，全部为脱敏后的虚构内容，与真实校内台账无关。真实台账仅存在于本地 data/platform.db，不进版本库。",
+ "_脱敏说明": "负责人姓名、电话、存放地点均已替换为虚构值；物资名称与规格保留真实分类以保证演示真实感。",
  "users": [
   {
    "id": 1,
@@ -12,7 +14,7 @@
    "username": "stu002",
    "name": "李同学",
    "role": "student",
-   "dept": "外国语学院"
+   "dept": "材料学院"
   },
   {
    "id": 3,
@@ -23,10 +25,10 @@
   },
   {
    "id": 4,
-   "username": "wh001",
-   "name": "赵老师",
-   "role": "warehouse",
-   "dept": "资产中心仓库"
+   "username": "mentor02",
+   "name": "刘老师",
+   "role": "mentor",
+   "dept": "材料学院"
   },
   {
    "id": 5,
@@ -36,46 +38,49 @@
    "dept": "财务资产处"
   },
   {
-   "id": 6,
-   "username": "mentor02",
-   "name": "刘老师",
-   "role": "mentor",
-   "dept": "外国语学院"
-  },
-  {
    "id": 7,
-   "username": "wh002",
-   "name": "周老师",
+   "username": "wh001",
+   "name": "赵老师",
    "role": "warehouse",
-   "dept": "资产中心二号库"
+   "dept": "资产处"
   },
   {
    "id": 8,
+   "username": "wh002",
+   "name": "周老师",
+   "role": "warehouse",
+   "dept": "资产处"
+  },
+  {
+   "id": 9,
    "username": "wh003",
    "name": "孙老师",
    "role": "warehouse",
-   "dept": "操场西侧仓库"
+   "dept": "资产处"
   },
   {
    "id": 9,
    "username": "wh004",
    "name": "田径场组王师傅",
    "role": "warehouse",
-   "dept": "田径场"
+   "dept": "体育部",
+   "phone": "13900000010"
   },
   {
    "id": 10,
    "username": "wh005",
    "name": "活动中心刘师傅",
    "role": "warehouse",
-   "dept": "活动中心"
+   "dept": "团委",
+   "phone": "13900000011"
   },
   {
    "id": 11,
    "username": "wh006",
-   "name": "车队楼张巧玲",
+   "name": "车队楼张师傅",
    "role": "warehouse",
-   "dept": "车队三楼"
+   "dept": "后勤集团",
+   "phone": "13900000012"
   }
  ],
  "materials": [
@@ -91,105 +96,105 @@
    "owner_id": 11,
    "available": 746,
    "reserved": 0,
-   "owner_name": "车队楼张巧玲",
-   "owner_phone": "15936275378"
+   "owner_name": "车队楼张师傅",
+   "owner_phone": "13900000012"
   },
   {
    "id": 80,
    "name": "床单",
    "size": "1.9m*1.15m",
    "category": "床上用品",
-   "location": "车队三楼",
+   "location": "活动中心三楼，北八一楼",
    "unit": "件",
    "total_qty": 760,
    "qty_note": "",
    "owner_id": 11,
    "available": 760,
    "reserved": 0,
-   "owner_name": "车队楼张巧玲",
-   "owner_phone": "15936275378"
+   "owner_name": "车队楼张师傅",
+   "owner_phone": "13900000012"
   },
   {
    "id": 81,
    "name": "枕皮",
    "size": "0.7m*0.45m",
    "category": "床上用品",
-   "location": "车队三楼",
+   "location": "活动中心三楼",
    "unit": "件",
    "total_qty": 760,
    "qty_note": "",
    "owner_id": 11,
    "available": 760,
    "reserved": 0,
-   "owner_name": "车队楼张巧玲",
-   "owner_phone": "15936275378"
+   "owner_name": "车队楼张师傅",
+   "owner_phone": "13900000012"
   },
   {
    "id": 82,
    "name": "被子",
    "size": "2m*1.5m",
    "category": "床上用品",
-   "location": "车队三楼",
+   "location": "田径场西仓库",
    "unit": "件",
    "total_qty": 700,
    "qty_note": "",
    "owner_id": 11,
    "available": 700,
    "reserved": 0,
-   "owner_name": "车队楼张巧玲",
-   "owner_phone": "15936275378"
+   "owner_name": "车队楼张师傅",
+   "owner_phone": "13900000012"
   },
   {
    "id": 83,
    "name": "褥子",
    "size": "1.95m*0.9m",
    "category": "床上用品",
-   "location": "车队三楼",
+   "location": "田径场入口北侧",
    "unit": "件",
    "total_qty": 810,
    "qty_note": "",
    "owner_id": 11,
    "available": 810,
    "reserved": 0,
-   "owner_name": "车队楼张巧玲",
-   "owner_phone": "15936275378"
+   "owner_name": "车队楼张师傅",
+   "owner_phone": "13900000012"
   },
   {
    "id": 84,
    "name": "枕芯",
    "size": "0.7m*0.40m",
    "category": "床上用品",
-   "location": "车队三楼",
+   "location": "北八一楼",
    "unit": "件",
    "total_qty": 610,
    "qty_note": "",
    "owner_id": 11,
    "available": 610,
    "reserved": 0,
-   "owner_name": "车队楼张巧玲",
-   "owner_phone": "15936275378"
+   "owner_name": "车队楼张师傅",
+   "owner_phone": "13900000012"
   },
   {
    "id": 85,
    "name": "夏凉被",
    "size": "2.1m*1.5m",
    "category": "床上用品",
-   "location": "车队三楼",
+   "location": "田径场看台北侧",
    "unit": "件",
    "total_qty": 660,
    "qty_note": "",
    "owner_id": 11,
    "available": 660,
    "reserved": 0,
-   "owner_name": "车队楼张巧玲",
-   "owner_phone": "15936275378"
+   "owner_name": "车队楼张师傅",
+   "owner_phone": "13900000012"
   },
   {
    "id": 86,
    "name": "红木桌",
    "size": "120*40",
    "category": "桌椅",
-   "location": "田径场入口北侧",
+   "location": "车队三楼",
    "unit": "张",
    "total_qty": 125,
    "qty_note": "",
@@ -197,7 +202,7 @@
    "available": 125,
    "reserved": 0,
    "owner_name": "田径场组王师傅",
-   "owner_phone": "15936275379"
+   "owner_phone": "13900000010"
   },
   {
    "id": 87,
@@ -212,14 +217,14 @@
    "available": 50,
    "reserved": 0,
    "owner_name": "活动中心刘师傅",
-   "owner_phone": "15936275380"
+   "owner_phone": "13900000011"
   },
   {
    "id": 88,
    "name": "长条桌",
    "size": "120*50",
    "category": "桌椅",
-   "location": "田径场入口北侧",
+   "location": "活动中心三楼",
    "unit": "张",
    "total_qty": 261,
    "qty_note": "",
@@ -227,14 +232,14 @@
    "available": 261,
    "reserved": 0,
    "owner_name": "田径场组王师傅",
-   "owner_phone": "15936275379"
+   "owner_phone": "13900000010"
   },
   {
    "id": 89,
    "name": "长条桌",
    "size": "120*40",
    "category": "桌椅",
-   "location": "活动中心三楼，北八一楼",
+   "location": "田径场西仓库",
    "unit": "张",
    "total_qty": 185,
    "qty_note": "",
@@ -242,14 +247,14 @@
    "available": 185,
    "reserved": 0,
    "owner_name": "活动中心刘师傅",
-   "owner_phone": "15936275380"
+   "owner_phone": "13900000011"
   },
   {
    "id": 90,
    "name": "塑料凳",
    "size": "",
    "category": "桌椅",
-   "location": "北八一楼",
+   "location": "田径场入口北侧",
    "unit": "个",
    "total_qty": 1100,
    "qty_note": "",
@@ -257,14 +262,14 @@
    "available": 1098,
    "reserved": 0,
    "owner_name": "活动中心刘师傅",
-   "owner_phone": "15936275380"
+   "owner_phone": "13900000011"
   },
   {
    "id": 91,
    "name": "黑皮椅",
    "size": "",
    "category": "桌椅",
-   "location": "活动中心三楼",
+   "location": "北八一楼",
    "unit": "个",
    "total_qty": 250,
    "qty_note": "",
@@ -272,7 +277,7 @@
    "available": 250,
    "reserved": 0,
    "owner_name": "活动中心刘师傅",
-   "owner_phone": "15936275380"
+   "owner_phone": "13900000011"
   },
   {
    "id": 92,
@@ -287,14 +292,14 @@
    "available": 20,
    "reserved": 0,
    "owner_name": "田径场组王师傅",
-   "owner_phone": "15936275379"
+   "owner_phone": "13900000010"
   },
   {
    "id": 93,
    "name": "隔离带",
    "size": "",
    "category": "场地器材",
-   "location": "田径场看台北侧",
+   "location": "车队三楼",
    "unit": "个",
    "total_qty": 180,
    "qty_note": "",
@@ -302,14 +307,14 @@
    "available": 180,
    "reserved": 0,
    "owner_name": "田径场组王师傅",
-   "owner_phone": "15936275379"
+   "owner_phone": "13900000010"
   },
   {
    "id": 94,
    "name": "电油汀",
    "size": "",
    "category": "电器",
-   "location": "田径场看台北侧",
+   "location": "活动中心三楼，北八一楼",
    "unit": "个",
    "total_qty": 45,
    "qty_note": "",
@@ -317,14 +322,14 @@
    "available": 45,
    "reserved": 0,
    "owner_name": "田径场组王师傅",
-   "owner_phone": "15936275379"
+   "owner_phone": "13900000010"
   },
   {
    "id": 95,
    "name": "电风扇",
    "size": "",
    "category": "电器",
-   "location": "田径场看台北侧",
+   "location": "活动中心三楼",
    "unit": "个",
    "total_qty": 4,
    "qty_note": "",
@@ -332,7 +337,7 @@
    "available": 4,
    "reserved": 0,
    "owner_name": "田径场组王师傅",
-   "owner_phone": "15936275379"
+   "owner_phone": "13900000010"
   },
   {
    "id": 96,
@@ -347,7 +352,7 @@
    "available": 990,
    "reserved": 5,
    "owner_name": "田径场组王师傅",
-   "owner_phone": "15936275379"
+   "owner_phone": "13900000010"
   }
  ]
 }
