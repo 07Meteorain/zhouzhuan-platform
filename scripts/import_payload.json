@@ -1,0 +1,190 @@
+{
+  "materials_chedui": [
+    {
+      "name": "被罩",
+      "spec": "2m*1.5m",
+      "qty": 760,
+      "location": "车队三楼",
+      "contact": "张巧玲",
+      "phone": "15936275378",
+      "category": "床上用品"
+    },
+    {
+      "name": "床单",
+      "spec": "1.9m*1.15m",
+      "qty": 760,
+      "location": "车队三楼",
+      "contact": "张巧玲",
+      "phone": "15936275378",
+      "category": "床上用品"
+    },
+    {
+      "name": "枕皮",
+      "spec": "0.7m*0.45m",
+      "qty": 760,
+      "location": "车队三楼",
+      "contact": "张巧玲",
+      "phone": "15936275378",
+      "category": "床上用品"
+    },
+    {
+      "name": "被子",
+      "spec": "2m*1.5m",
+      "qty": 700,
+      "location": "车队三楼",
+      "contact": "张巧玲",
+      "phone": "15936275378",
+      "category": "床上用品"
+    },
+    {
+      "name": "褥子",
+      "spec": "1.95m*0.9m",
+      "qty": 810,
+      "location": "车队三楼",
+      "contact": "张巧玲",
+      "phone": "15936275378",
+      "category": "床上用品"
+    },
+    {
+      "name": "枕芯",
+      "spec": "0.7m*0.40m",
+      "qty": 610,
+      "location": "车队三楼",
+      "contact": "张巧玲",
+      "phone": "15936275378",
+      "category": "床上用品"
+    },
+    {
+      "name": "夏凉被",
+      "spec": "2.1m*1.5m",
+      "qty": 660,
+      "location": "车队三楼",
+      "contact": "张巧玲",
+      "phone": "15936275378",
+      "category": "床上用品"
+    }
+  ],
+  "materials_lishifu": [
+    {
+      "name": "红木桌",
+      "spec": "120*40",
+      "unit": "张",
+      "qty": 125,
+      "qty_note": "",
+      "location": "田径场入口北侧",
+      "owner_username": "wh004",
+      "owner_name": "田径场组王师傅",
+      "category": "桌椅"
+    },
+    {
+      "name": "长条桌",
+      "spec": "160*40",
+      "unit": "张",
+      "qty": 50,
+      "qty_note": "",
+      "location": "活动中心三楼，北八一楼",
+      "owner_username": "wh005",
+      "owner_name": "活动中心刘师傅",
+      "category": "桌椅"
+    },
+    {
+      "name": "长条桌",
+      "spec": "120*50",
+      "unit": "张",
+      "qty": 261,
+      "qty_note": "",
+      "location": "田径场入口北侧",
+      "owner_username": "wh004",
+      "owner_name": "田径场组王师傅",
+      "category": "桌椅"
+    },
+    {
+      "name": "长条桌",
+      "spec": "120*40",
+      "unit": "张",
+      "qty": 185,
+      "qty_note": "",
+      "location": "活动中心三楼，北八一楼",
+      "owner_username": "wh005",
+      "owner_name": "活动中心刘师傅",
+      "category": "桌椅"
+    },
+    {
+      "name": "塑料凳",
+      "spec": "",
+      "unit": "个",
+      "qty": 1100,
+      "qty_note": "",
+      "location": "北八一楼",
+      "owner_username": "wh005",
+      "owner_name": "活动中心刘师傅",
+      "category": "桌椅"
+    },
+    {
+      "name": "黑皮椅",
+      "spec": "",
+      "unit": "个",
+      "qty": 250,
+      "qty_note": "",
+      "location": "活动中心三楼",
+      "owner_username": "wh005",
+      "owner_name": "活动中心刘师傅",
+      "category": "桌椅"
+    },
+    {
+      "name": "平板车",
+      "spec": "",
+      "unit": "个",
+      "qty": 20,
+      "qty_note": "",
+      "location": "田径场看台北侧",
+      "owner_username": "wh004",
+      "owner_name": "田径场组王师傅",
+      "category": "搬运工具"
+    },
+    {
+      "name": "隔离带",
+      "spec": "",
+      "unit": "个",
+      "qty": 180,
+      "qty_note": "",
+      "location": "田径场看台北侧",
+      "owner_username": "wh004",
+      "owner_name": "田径场组王师傅",
+      "category": "场地器材"
+    },
+    {
+      "name": "电油汀",
+      "spec": "",
+      "unit": "个",
+      "qty": 45,
+      "qty_note": "",
+      "location": "田径场看台北侧",
+      "owner_username": "wh004",
+      "owner_name": "田径场组王师傅",
+      "category": "电器"
+    },
+    {
+      "name": "电风扇",
+      "spec": "",
+      "unit": "个",
+      "qty": 4,
+      "qty_note": "",
+      "location": "田径场看台北侧",
+      "owner_username": "wh004",
+      "owner_name": "田径场组王师傅",
+      "category": "电器"
+    },
+    {
+      "name": "马扎",
+      "spec": "",
+      "unit": "个",
+      "qty": 990,
+      "qty_note": "约990+",
+      "location": "田径场西仓库",
+      "owner_username": "wh004",
+      "owner_name": "田径场组王师傅",
+      "category": "座椅"
+    }
+  ]
+}

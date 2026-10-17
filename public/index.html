@@ -1,0 +1,585 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>周转物资平台</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:system-ui,-apple-system,"Segoe UI","Microsoft YaHei",sans-serif;
+  background:#f2f4f7;color:#1f2933;font-size:14px;line-height:1.6}
+.wrap{max-width:1000px;margin:0 auto;padding:18px}
+.card{background:#fff;border:1px solid #e4e7eb;border-radius:10px;padding:14px 18px;display:flex;
+  align-items:center;gap:12px;margin-bottom:16px}
+h2{font-size:17px;font-weight:500;margin:20px 0 8px}
+h3{font-size:15px;font-weight:500;margin:14px 0 6px}
+.muted{color:#6b7684}
+.hide{display:none!important}
+.tabs{display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap}
+.tabs button{background:#fff;color:#3e4c59;border:1px solid #cbd2d9;border-radius:6px;
+  padding:7px 14px;font-size:14px;cursor:pointer}
+.tabs button:hover{background:#f5f6f8}
+.tabs button.on{background:#2563eb;color:#fff;border-color:#2563eb}
+.tabs button.on:hover{background:#1d4ed8}
+button{background:#2563eb;color:#fff;border:1px solid #2563eb;border-radius:6px;padding:8px 16px;
+  font-size:14px;cursor:pointer}
+button:hover{background:#1d4ed8}
+button.ghost{background:#fff;color:#3e4c59;border-color:#cbd2d9}
+button.ghost:hover{background:#f5f6f8}
+button.sm{padding:4px 10px;font-size:13px}
+button.ghost.sm{background:#fff;color:#3e4c59;border-color:#cbd2d9}
+button.lk{background:none;border:none;color:#185fa5;text-decoration:underline;padding:0;font-size:13px;cursor:pointer}
+table{width:100%;border-collapse:collapse;background:#fff;border:1px solid #e4e7eb;
+  border-radius:10px;overflow:hidden;margin-bottom:16px}
+th,td{padding:9px 12px;text-align:left;border-bottom:1px solid #eef1f4;font-size:13px;vertical-align:top}
+th{background:#f7f8fa;font-weight:500;color:#52606d;white-space:nowrap}
+tr:last-child td{border-bottom:none}
+label{display:block;margin:12px 0 4px;font-size:13px;color:#52606d}
+input,select,textarea{width:100%;padding:9px 11px;border:1px solid #cbd2d9;border-radius:6px;
+  font-size:14px;font-family:inherit;background:#fff}
+input:focus,select:focus{outline:2px solid #bfdbfe;border-color:#2563eb}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px}
+.mcard{background:#fff;border-radius:10px;padding:16px;border:1px solid #e4e7eb}
+.mcard .qty{font-size:26px;font-weight:500;margin-top:6px}
+.hint{background:#eff6ff;border-left:3px solid #2563eb;padding:10px 14px;border-radius:6px;
+  font-size:13px;color:#33415c;margin-bottom:14px}
+.err{color:#a32d2d;font-size:13px;margin-top:8px;white-space:pre-wrap}
+.tag{display:inline-block;padding:2px 9px;border-radius:10px;font-size:12px;background:#e6f1fb;color:#185fa5;white-space:nowrap}
+.tag.ok{background:#e1f5ee;color:#0f6e56}
+.tag.warn{background:#faeeda;color:#854f0b}
+.tag.err{background:#fcebeb;color:#a32d2d}
+.mb{margin-bottom:16px}
+.dback{margin:0 0 14px}
+.dhead{background:#fff;border-radius:10px;padding:20px;border:1px solid #e4e7eb;margin-bottom:16px}
+.dhead h2{margin:0 0 6px;font-size:18px}
+.dgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;margin-top:14px}
+.dcell{background:#f7f8fa;border:1px solid #e4e7eb;border-radius:8px;padding:10px 12px}
+.dcell .k{font-size:12px;color:#6b7684}
+.dcell .v{font-size:14px;margin-top:4px;word-break:break-word}
+.dsec{background:#fff;border-radius:10px;padding:20px;border:1px solid #e4e7eb;margin-bottom:16px}
+.dsec h3{margin:0 0 12px;font-size:15px;font-weight:500}
+.qsteps{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+.qstep{flex:1;min-width:112px;border:1px solid #e4e7eb;border-radius:8px;padding:10px 12px;background:#fff}
+.qstep .k{font-size:12px;color:#6b7684}
+.qstep .v{font-size:20px;margin-top:2px}
+.qstep.on{border-color:#2563eb;background:#f5f9ff}
+.qstep.zero .v{color:#9aa4b0}
+.tl{list-style:none;margin:0;padding:0 0 0 22px;position:relative}
+.tl:before{content:"";position:absolute;left:6px;top:6px;bottom:6px;width:2px;background:#e4e7eb}
+.tl li{position:relative;padding:0 0 18px 0}
+.tl li:last-child{padding-bottom:0}
+.tl li:before{content:"";position:absolute;left:-20px;top:6px;width:10px;height:10px;
+  border-radius:50%;background:#fff;border:2px solid #cbd2d9}
+.tl li.cur:before{border-color:#2563eb;background:#2563eb}
+.tl .when{font-size:12px;color:#6b7684}
+.tl .what{font-size:14px;margin-top:2px}
+.tl .who{font-size:12px;color:#6b7684;margin-top:2px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<div id="login" class="card" style="flex-direction:column;align-items:stretch;padding:26px">
+  <h2 style="margin-top:0">周转物资平台</h2>
+  <div class="hint">内嵌于学校 OA 的周转物资申领模块。演示环境可直接点击下方账号快速登录。</div>
+  <label>用户名</label><input id="u" autocomplete="username">
+  <label>口令</label><input id="p" type="password" autocomplete="current-password">
+  <div class="row" style="margin-top:14px"><button onclick="doLogin()">登录</button></div>
+  <div id="loginErr" class="err"></div>
+  <div class="hint" style="margin-top:20px">
+    <b>学生</b><br>
+    <a onclick="fill('stu001')" class="lk">stu001 张同学</a>　<a onclick="fill('stu002')" class="lk">stu002 李同学</a><br><br>
+    <b>导师</b><br>
+    <a onclick="fill('mentor01')" class="lk">mentor01 王老师</a>　<a onclick="fill('mentor02')" class="lk">mentor02 刘老师</a><br><br>
+    <b>仓库老师</b><br>
+    <a onclick="fill('wh006')" class="lk">wh006 车队楼张巧玲</a>　<a onclick="fill('wh005')" class="lk">wh005 活动中心刘师傅</a>　<a onclick="fill('wh004')" class="lk">wh004 田径场组王师傅</a><br><br>
+    <b>资产管理员</b><br>
+    <a onclick="fill('adm001')" class="lk">adm001 财务资产处</a>
+    <div class="muted" style="margin-top:8px">统一口令 demo1234</div>
+  </div>
+</div>
+
+<div id="app" class="hide">
+  <div class="card">
+    <div style="flex:1"><b>周转物资平台</b><span id="who" class="muted"></span></div>
+    <span id="mode" class="tag"></span>
+    <button class="ghost sm" onclick="logout()">退出</button>
+  </div>
+  <div id="view"></div>
+</div>
+
+</div>
+<script>
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' }[c]));
+let TOKEN = localStorage.getItem('zz_token') || '';
+let ME = null;
+const login = $('login'), app = $('app'), view = $('view'), who = $('who'), mode = $('mode'), loginErr = $('loginErr');
+const u = $('u'), p = $('p');
+
+async function api(path, opt) {
+  const r = await fetch(path, Object.assign({
+    headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + TOKEN },
+  }, opt || {}));
+  const d = await r.json().catch(() => ({}));
+  if (!r.ok) { if (r.status === 401) { localStorage.removeItem('zz_token'); location.reload(); } throw new Error(d.error || ('HTTP ' + r.status)); }
+  return d;
+}
+function fill(username) { u.value = username; p.value = 'demo1234'; loginErr.textContent = ''; }
+async function doLogin() {
+  try {
+    const d = await api('/api/login', { method: 'POST', body: JSON.stringify({ username: u.value.trim(), password: p.value }) });
+    TOKEN = d.token; localStorage.setItem('zz_token', TOKEN); await boot();
+  } catch (e) { loginErr.textContent = e.message; }
+}
+async function logout() {
+  await api('/api/logout', { method: 'POST' }).catch(() => {});
+  localStorage.removeItem('zz_token'); location.reload();
+}
+async function boot() {
+  if (!TOKEN) return;
+  try {
+    const d = await api('/api/me');
+    ME = d.user;
+    login.classList.add('hide'); app.classList.remove('hide');
+    who.textContent = ' · ' + ME.name + ' · ' + d.roles[ME.role];
+    mode.textContent = '认证:' + d.authMode + ' 审批:' + d.approvalMode;
+    render();
+  } catch (e) { localStorage.removeItem('zz_token'); }
+}
+
+const STATUS_TEXT = {
+  pending_mentor: '待导师审批', pending_warehouse: '待仓库核库存', to_issue: '待发放',
+  in_use: '借用中', return_submitted: '待老师清点', returned: '已归还',
+  partial_closed: '部分通过已终止', rejected: '已驳回', mismatch: '账实不符待处理', closed: '已核销',
+};
+function tag(t) {
+  if (/驳回|终止/.test(t)) return '<span class="tag err">' + esc(t) + '</span>';
+  if (/不符/.test(t)) return '<span class="tag warn">' + esc(t) + '</span>';
+  if (/已归还|已核销/.test(t)) return '<span class="tag ok">' + esc(t) + '</span>';
+  if (/待老师清点/.test(t)) return '<span class="tag warn">' + esc(t) + '</span>';
+  return '<span class="tag">' + esc(t) + '</span>';
+}
+const bizText = (t) => ({ reserve:'核定预占', release:'释放预占', issue:'发放', return:'归还', adjust:'调整' })[t] || t;
+
+let ALL_MATS = [];
+let ALL_REQS = [];
+let STU_TAB = 'list';
+let ADM_TAB = 'mismatch';
+let PENDING_MAT = null;
+
+async function render() {
+  const r = ME.role;
+  const [reqs, mats] = await Promise.all([
+    api('/api/requests'),
+    (r === 'student' || r === 'warehouse') ? api('/api/materials') : Promise.resolve([]),
+  ]);
+  try {
+    if (r === 'student') {
+      view.innerHTML = studentView(reqs, mats);
+      if (PENDING_MAT && $('aMat')) { $('aMat').value = String(PENDING_MAT); onMatChange(); PENDING_MAT = null; }
+    } else if (r === 'mentor') view.innerHTML = mentorView(reqs);
+    else if (r === 'warehouse') view.innerHTML = warehouseView(reqs, mats);
+    else view.innerHTML = await adminView(reqs);
+  } catch (e) {
+    view.innerHTML = '<div class="err" style="padding:20px">加载失败：' + esc(e.message) + '</div>';
+  }
+}
+
+/* ================= 学生端 ================= */
+function studentView(reqs, mats) {
+  ALL_MATS = mats || []; ALL_REQS = reqs || [];
+  const tabs = '<div class="tabs">' +
+    '<button class="' + (STU_TAB === 'list' ? 'on' : '') + '" onclick="setStuTab(\'list\')">可申领物资</button>' +
+    '<button class="' + (STU_TAB === 'apply' ? 'on' : '') + '" onclick="setStuTab(\'apply\')">新建申领</button>' +
+    '<button class="' + (STU_TAB === 'mine' ? 'on' : '') + '" onclick="setStuTab(\'mine\')">我的申领</button>' +
+    '<button class="' + (STU_TAB === 'return' ? 'on' : '') + '" onclick="setStuTab(\'return\')">我的借用与归还</button>' +
+    '</div>';
+  if (STU_TAB === 'apply') return tabs + applyPage();
+  if (STU_TAB === 'mine') return tabs + myReqPage(reqs);
+  if (STU_TAB === 'return') return tabs + returnBox(reqs);
+  return tabs + matListPage();
+}
+function setStuTab(t) { STU_TAB = t; render(); }
+function goApply(materialId) { STU_TAB = 'apply'; PENDING_MAT = materialId; render(); }
+
+function matListPage() {
+  return '<h2>可申领物资（' + ALL_MATS.length + ' 种）</h2>' +
+    '<div class="hint">先在这里挑好物资，点卡片上的<b>「申领」</b>直接进入申领页并自动选中它。也可以直接点上方「新建申领」页签，从下拉框里选。</div>' +
+    '<div class="grid">' + (ALL_MATS.map(m =>
+      '<div class="mcard">' +
+        '<h3 style="margin-top:0">' + esc(m.name) + (m.size ? ' <span class="muted" style="font-weight:400;font-size:13px">' + esc(m.size) + '</span>' : '') + '</h3>' +
+        '<div class="muted">' + esc(m.category || '-') + ' · ' + esc(m.location) + '</div>' +
+        '<div class="qty">' + m.available + ' <span style="font-size:13px;color:#6b7684">' + esc(m.unit) + '在库</span></div>' +
+        '<div class="muted" style="margin-top:6px">负责老师：<b style="color:#185fa5">' + esc(m.owner_name || '未绑定') + '</b>' + (m.owner_phone ? ' · ' + esc(m.owner_phone) : '') + '</div>' +
+        (m.reserved > 0 ? '<div class="muted">已核定待发放 ' + m.reserved + ' ' + esc(m.unit) + '</div>' : '') +
+        (m.qty_note ? '<div class="muted">台账登记：' + esc(m.qty_note) + '</div>' : '') +
+        '<div class="row" style="margin-top:10px"><button class="sm" onclick="goApply(' + m.id + ')">申领</button></div>' +
+      '</div>').join('') || '<div class="muted">暂无可申领物资</div>') + '</div>';
+}
+
+function applyPage() {
+  if (!ALL_MATS.length) return '<h2>新建申领单</h2><div class="hint">当前暂无可申领物资。</div>';
+  const opts = ALL_MATS.map(m =>
+    '<option value="' + m.id + '">' + esc(m.name) + (m.size ? '（' + esc(m.size) + '）' : '') +
+    ' — 可申请 ' + (m.available - m.reserved) + ' ' + esc(m.unit) + '</option>').join('');
+  return '<h2>新建申领单</h2>' +
+    '<div class="hint">选择物资后由<b>该物资的负责老师</b>核定数量并发放。申领单提交后先经导师审批。</div>' +
+    '<div id="applyBox" style="background:#fff;padding:20px;border-radius:10px;max-width:640px">' +
+    '<label>选择物资</label><select id="aMat" onchange="onMatChange()">' + opts + '</select>' +
+    '<div id="aOwner" class="hint" style="margin-top:8px"></div>' +
+    '<label>申请数量</label><input id="aQty" type="number" min="1" value="1">' +
+    '<label>用途</label><input id="aPurpose" placeholder="例如：社团活动答辩">' +
+    '<label>使用时间</label><div class="row"><input id="aStart" type="date"><input id="aEnd" type="date"></div>' +
+    '<label>借用人</label><input id="aBorrower" placeholder="默认与本人一致">' +
+    '<label>联系电话</label><input id="aPhone">' +
+    '<label>抵押备注</label><input id="aDep" value="学生证抵押">' +
+    '<div class="row" style="margin-top:14px"><button onclick="submitApply()">提交申领</button>' +
+    '<button class="ghost" onclick="setStuTab(\'mine\')">取消</button></div>' +
+    '<div id="applyMsg" class="err"></div></div>';
+}
+function onMatChange() {
+  const sel = $('aMat'), box = $('aOwner');
+  if (!sel || !box) return;
+  const m = ALL_MATS.find(x => x.id === Number(sel.value));
+  box.innerHTML = m
+    ? '存放于 <b>' + esc(m.location) + '</b>，由 <b>' + esc(m.owner_name || '未绑定') + '</b> 负责，核定与发放都由这位老师处理；实际可申请 <b>' + (m.available - m.reserved) + '</b> ' + esc(m.unit) + '。' +
+      (m.qty_note ? '（台账登记' + esc(m.qty_note) + '，发放前建议与老师核对）' : '')
+    : '';
+}
+async function submitApply() {
+  const matId = $('aMat').value;
+  if (!matId) { $('applyMsg').textContent = '请先选择物资'; return; }
+  try {
+    await api('/api/requests', { method: 'POST', body: JSON.stringify({
+      material_id: matId, apply_qty: Number($('aQty').value), purpose: $('aPurpose').value,
+      use_start: $('aStart').value, use_end: $('aEnd').value, borrower: $('aBorrower').value,
+      phone: $('aPhone').value, deposit_note: $('aDep').value }) });
+    STU_TAB = 'mine'; PENDING_MAT = null;
+    alert('申领已提交，等待导师审批'); render();
+  } catch (e) { $('applyMsg').textContent = e.message; }
+}
+
+function myReqPage(reqs) {
+  return '<h2>我的申领（' + reqs.length + '）</h2>' +
+    '<div class="hint">申领单提交后由导师审批，再由<b>该物资的负责老师</b>核定数量。库存按实际发放数量扣减。</div>' +
+    '<table><thead><tr><th>单号</th><th>物资</th><th>负责老师</th><th>申请</th><th>核定</th><th>实发</th><th>实还</th><th>状态</th><th>操作</th></tr></thead><tbody>' +
+    (reqs.map(r => '<tr>' +
+      '<td>' + esc(r.code) + '</td><td>' + esc(r.material_name) + '</td><td class="muted">' + esc(r.owner_name || '-') + '</td>' +
+      '<td>' + r.apply_qty + '</td><td>' + (r.approved_qty ?? '-') + '</td><td>' + (r.issued_qty ?? '-') + '</td><td>' + (r.returned_qty ?? '-') + '</td>' +
+      '<td>' + tag(r.status_text) + '</td>' +
+      '<td><button class="ghost sm" onclick="detail(' + r.id + ')">详情</button></td></tr>').join('')
+      || '<tr><td colspan="9">暂无申领记录</td></tr>') + '</tbody></table>';
+}
+
+function returnBox(reqs) {
+  const using = reqs.filter(r => r.status === 'in_use');
+  const waiting = reqs.filter(r => r.status === 'return_submitted');
+  const done = reqs.filter(r => r.status === 'returned' || r.status === 'mismatch' || r.status === 'closed');
+  const head = '<thead><tr><th>单号</th><th>物资</th><th>负责老师</th><th>实发</th><th>申报归还</th><th>实还</th><th>缺失</th><th>状态</th><th>操作</th></tr></thead>';
+  const row = (r, action) => '<tr>' +
+    '<td>' + esc(r.code) + '</td><td>' + esc(r.material_name) + '</td><td class="muted">' + esc(r.owner_name || '-') + '</td>' +
+    '<td>' + (r.issued_qty ?? '-') + '</td><td>' + (r.return_declared_qty ?? '-') + '</td><td>' + (r.returned_qty ?? '-') + '</td>' +
+    '<td>' + (r.missing_qty ? '<b style="color:#a32d2d">' + r.missing_qty + '</b>' : '0') + '</td>' +
+    '<td>' + tag(r.status_text) + '</td><td>' + action + '</td></tr>';
+  return '<h2>我的借用与归还</h2>' +
+    '<div class="hint">归还分两步：先在这里<b>拍照提交归还申请</b>，再由<b>负责老师现场清点</b>并登记实际归还数量。若清点少于实发数量，差额进入学校物资丢失流程，<b>不会计入库存</b>。</div>' +
+    '<h3>借用中·待提交归还（' + using.length + '）</h3><table>' + head + '<tbody>' +
+    (using.map(r => row(r, '<button class="sm" onclick="studentReturnGo(' + r.id + ',' + r.issued_qty + ')">提交归还</button> <button class="ghost sm" onclick="detail(' + r.id + ')">详情</button>')).join('')
+      || '<tr><td colspan="9">暂无借用中的物资</td></tr>') + '</tbody></table>' +
+    '<h3>已提交·待老师清点（' + waiting.length + '）</h3><table>' + head + '<tbody>' +
+    (waiting.map(r => row(r, '<span class="muted">等待' + esc(r.owner_name || '负责老师') + '清点</span> <button class="ghost sm" onclick="detail(' + r.id + ')">详情</button>')).join('')
+      || '<tr><td colspan="9">暂无待清点单据</td></tr>') + '</tbody></table>' +
+    '<h3>已归还记录（' + done.length + '）</h3><table>' + head + '<tbody>' +
+    (done.map(r => row(r, '<button class="ghost sm" onclick="detail(' + r.id + ')">详情</button>')).join('')
+      || '<tr><td colspan="9">暂无归还记录</td></tr>') + '</tbody></table>';
+}
+function studentReturnGo(id, issued) {
+  const qty = prompt('实发 ' + issued + ' 件，本次准备归还多少件？\n请如实填写，老师清点后以实际数量为准', issued);
+  if (qty === null) return;
+  const photos = prompt('归还凭证照片（可填多个，用逗号分隔）', '归还现场照片.jpg');
+  if (photos === null) return;
+  const list = photos.split(/[,，]/).map(s => s.trim()).filter(Boolean);
+  if (!list.length) return alert('请至少上传一张归还照片');
+  api('/api/requests/return-submit', { method: 'POST', body: JSON.stringify({ id, declared_qty: Number(qty), photos: list }) })
+    .then(() => { alert('归还申请已提交，等待负责老师清点'); render(); }).catch(e => alert(e.message));
+}
+
+/* ================= 导师端 ================= */
+function mentorView(reqs) {
+  ALL_REQS = reqs || [];
+  const list = reqs.filter(r => r.status === 'pending_mentor');
+  return '<h2>待我审批（' + list.length + '）</h2>' +
+    '<div class="hint">导师仅负责审批。数量核定由仓库老师完成，部分通过时会生成改单并回到您这里再次审批。</div>' +
+    '<table><thead><tr><th>单号</th><th>申请人</th><th>物资</th><th>负责老师</th><th>申请数量</th><th>用途</th><th>使用时间</th><th>操作</th></tr></thead><tbody>' +
+    (list.map(r => '<tr>' +
+      '<td>' + esc(r.code) + '</td><td>' + esc(r.applicant_name) + '</td><td>' + esc(r.material_name) + '</td>' +
+      '<td class="muted">' + esc(r.owner_name || '-') + '</td><td>' + r.apply_qty + ' ' + esc(r.unit) + '</td>' +
+      '<td class="muted">' + esc(r.purpose || '-') + '</td><td class="muted">' + esc(r.use_start || '-') + ' ~ ' + esc(r.use_end || '-') + '</td>' +
+      '<td class="row"><button class="sm" onclick="mentorGo(' + r.id + ',1)">通过</button>' +
+      '<button class="ghost sm" onclick="mentorGo(' + r.id + ',0)">驳回</button>' +
+      '<button class="ghost sm" onclick="detail(' + r.id + ')">详情</button></td></tr>').join('')
+      || '<tr><td colspan="8">暂无待审批单据</td></tr>') + '</tbody></table>';
+}
+async function mentorGo(id, pass) {
+  const note = prompt(pass ? '审批备注（可留空）' : '驳回原因', '');
+  if (note === null) return;
+  try {
+    await api('/api/requests/mentor', { method: 'POST', body: JSON.stringify({ id, pass, note }) });
+    alert(pass ? '已通过' : '已驳回'); render();
+  } catch (e) { alert(e.message); }
+}
+
+/* ================= 仓库老师端 ================= */
+function warehouseView(reqs, mats) {
+  ALL_REQS = reqs || [];
+  const wait = reqs.filter(r => r.status === 'pending_warehouse');
+  const issue = reqs.filter(r => r.status === 'to_issue');
+  const use = reqs.filter(r => r.status === 'in_use');
+  const toCheck = reqs.filter(r => r.status === 'return_submitted');
+  const myMats = mats || [];
+  return '<h2>我负责的物资（' + myMats.length + ' 种）</h2>' +
+    '<div class="hint">您是以下 ' + myMats.length + ' 种物资的负责老师。只有这些物资的申领单会路由到您这里，其他仓库老师看不到、也无权核定或发放。<b>待处理 ' + (wait.length + issue.length) + ' 单，待清点归还 ' + toCheck.length + ' 单，借用中 ' + use.length + ' 单。</b></div>' +
+    '<div class="grid mb">' + (myMats.map(m => '<div class="mcard" style="border-left:3px solid #2563eb">' +
+      '<h3 style="margin-top:0">' + esc(m.name) + (m.size ? ' <span class="muted" style="font-weight:400;font-size:13px">' + esc(m.size) + '</span>' : '') + '</h3>' +
+      '<div class="muted">' + esc(m.category || '-') + ' · ' + esc(m.location) + '</div>' +
+      '<div class="qty">' + m.available + ' <span style="font-size:13px;color:#6b7684">' + esc(m.unit) + '在库</span></div>' +
+      '<div class="muted">已核定待发放：' + m.reserved + ' ' + esc(m.unit) + '</div>' +
+      '<div class="muted" style="margin-top:6px">可发放 <b style="color:#185fa5">' + (m.available - m.reserved) + '</b> ' + esc(m.unit) + '</div>' +
+      (m.qty_note ? '<div class="muted">台账' + esc(m.qty_note) + '，实发前请核对</div>' : '') +
+      '</div>').join('') || '<div class="muted">暂未绑定任何物资</div>') + '</div>' +
+
+    '<h2>待核定数量（' + wait.length + '）</h2>' +
+    '<div class="hint">核定数量小于申请数量时会生成改单，学生需按核定数量修改后重新提交审批。核定即锁定库存，避免核定通过却发不出去。</div>' +
+    '<table><thead><tr><th>单号</th><th>申请人</th><th>物资</th><th>申请</th><th>核定数量</th><th>操作</th></tr></thead><tbody>' +
+    (wait.map(r => '<tr><td>' + esc(r.code) + '</td><td>' + esc(r.applicant_name) + '</td><td>' + esc(r.material_name) + '</td>' +
+      '<td>' + r.apply_qty + ' ' + esc(r.unit) + '</td>' +
+      '<td><input id="n' + r.id + '" type="number" min="0" value="' + r.apply_qty + '" style="width:80px"></td>' +
+      '<td class="row"><button class="sm" onclick="check(' + r.id + ')">提交核定</button>' +
+      '<button class="ghost sm" onclick="detail(' + r.id + ')">详情</button></td></tr>').join('')
+      || '<tr><td colspan="6">暂无待核定单据</td></tr>') + '</tbody></table>' +
+
+    '<h2>待发放（' + issue.length + '）</h2>' +
+    '<div class="hint">学生需<b>携学生证到场抵押</b>后领取。实发数量可少于核定数量，差额自动释放回库存。</div>' +
+    '<table><thead><tr><th>单号</th><th>申领人</th><th>物资</th><th>核定</th><th>实发数量</th><th>抵押备注</th><th>操作</th></tr></thead><tbody>' +
+    (issue.map(r => '<tr><td>' + esc(r.code) + '</td><td>' + esc(r.borrower || r.applicant_name) + '</td><td>' + esc(r.material_name) + '</td>' +
+      '<td>' + r.approved_qty + ' ' + esc(r.unit) + '</td>' +
+      '<td><input id="i' + r.id + '" type="number" min="1" value="' + r.approved_qty + '" style="width:80px"></td>' +
+      '<td><input id="d' + r.id + '" value="学生证抵押" style="width:110px"></td>' +
+      '<td class="row"><button class="sm" onclick="issueGo(' + r.id + ')">确认发放</button>' +
+      '<button class="ghost sm" onclick="detail(' + r.id + ')">详情</button></td></tr>').join('')
+      || '<tr><td colspan="7">暂无待发放单据</td></tr>') + '</tbody></table>' +
+
+    '<h2>待清点归还（' + toCheck.length + '）</h2>' +
+    '<div class="hint">学生已拍照提交归还申请。请<b>现场清点</b>后填入实际归还数量——以清点结果为准。若少于实发数量，差额进入学校物资丢失流程，<b>不会计入库存</b>。学生已上传的照片可在详情页查看。</div>' +
+    '<table><thead><tr><th>单号</th><th>借用人</th><th>物资</th><th>实发</th><th>学生申报</th><th>实还数量</th><th>操作</th></tr></thead><tbody>' +
+    (toCheck.map(r => '<tr><td>' + esc(r.code) + '</td><td>' + esc(r.borrower || r.applicant_name) + '</td><td>' + esc(r.material_name) + '</td>' +
+      '<td>' + r.issued_qty + ' ' + esc(r.unit) + '</td>' +
+      '<td>' + (r.return_declared_qty ?? '-') + ' ' + esc(r.unit) +
+        (r.return_declared_qty != null && r.return_declared_qty !== r.issued_qty ? '<div class="muted">申报已少于实发，差额将进丢失流程</div>' : '') + '</td>' +
+      '<td><input id="rt' + r.id + '" type="number" min="0" max="' + r.issued_qty + '" value="' + (r.return_declared_qty ?? r.issued_qty) + '" style="width:80px"></td>' +
+      '<td class="row"><button class="sm" onclick="returnGo(' + r.id + ',' + r.issued_qty + ')">清点登记</button>' +
+      '<button class="ghost sm" onclick="detail(' + r.id + ')">详情</button></td></tr>').join('')
+      || '<tr><td colspan="7">暂无待清点单据</td></tr>') + '</tbody></table>' +
+
+    '<h2>借用中·学生未提交归还（' + use.length + '）</h2>' +
+    '<div class="hint">学生尚未在线上提交归还申请。若学生已到场归还，可直接在此清点登记。</div>' +
+    '<table><thead><tr><th>单号</th><th>借用人</th><th>物资</th><th>实发</th><th>应还日期</th><th>实还数量</th><th>操作</th></tr></thead><tbody>' +
+    (use.map(r => '<tr><td>' + esc(r.code) + '</td><td>' + esc(r.borrower || r.applicant_name) + '</td><td>' + esc(r.material_name) + '</td>' +
+      '<td>' + r.issued_qty + ' ' + esc(r.unit) + '</td><td>' + esc(r.use_end || '-') + '</td>' +
+      '<td><input id="rt' + r.id + '" type="number" min="0" max="' + r.issued_qty + '" value="' + r.issued_qty + '" style="width:80px"></td>' +
+      '<td class="row"><button class="sm" onclick="returnGo(' + r.id + ',' + r.issued_qty + ')">清点登记</button>' +
+      '<button class="ghost sm" onclick="detail(' + r.id + ')">详情</button></td></tr>').join('')
+      || '<tr><td colspan="7">暂无借用中物资</td></tr>') + '</tbody></table>';
+}
+async function check(id) {
+  try {
+    const r = await api('/api/requests/check', { method: 'POST', body: JSON.stringify({ id, approved_qty: Number($('n' + id).value) }) });
+    if (r.created) alert('已生成部分通过改单 ' + r.created.code + '，需学生修改后重新提交审批');
+    else alert('已核定：完全通过');
+    render();
+  } catch (e) { alert(e.message); }
+}
+async function issueGo(id) {
+  const qty = Number($('i' + id).value);
+  try {
+    await api('/api/requests/issue', { method: 'POST', body: JSON.stringify({ id, issued_qty: qty, deposit_note: $('d' + id).value }) });
+    alert('已发放，库存按实发数量扣减'); render();
+  } catch (e) { alert(e.message); }
+}
+function returnGo(id, issued) {
+  const el = $('rt' + id);
+  const qty = Number(el ? el.value : issued);
+  if (!Number.isInteger(qty) || qty < 0 || qty > issued) return alert('实还数量必须是 0 ~ ' + issued + ' 之间的整数');
+  if (qty > 0 && !confirm('确认清点：实发 ' + issued + '，实还 ' + qty + '，缺失 ' + (issued - qty) + '？\n库存将回增 ' + qty + '，缺失 ' + (issued - qty) + ' 进入丢失流程且不计入库存。')) return;
+  api('/api/requests/return', { method: 'POST', body: JSON.stringify({ id, returned_qty: qty }) })
+    .then(() => { alert(qty < issued ? '已登记归还 ' + qty + '，缺失 ' + (issued - qty) + ' 已转学校物资丢失流程' : '归还已登记，账实相符'); render(); })
+    .catch(e => alert(e.message));
+}
+
+/* ================= 资产管理员端 ================= */
+async function adminView(reqs) {
+  ALL_REQS = reqs || [];
+  const tabs = '<div class="tabs">' +
+    '<button class="' + (ADM_TAB === 'mismatch' ? 'on' : '') + '" onclick="setTab(\'mismatch\')">账实不符待核销</button>' +
+    '<button class="' + (ADM_TAB === 'assign' ? 'on' : '') + '" onclick="setTab(\'assign\')">物资负责人绑定</button>' +
+    '<button class="' + (ADM_TAB === 'all' ? 'on' : '') + '" onclick="setTab(\'all\')">全部单据</button>' +
+    '<button class="' + (ADM_TAB === 'stock' ? 'on' : '') + '" onclick="setTab(\'stock\')">库存总览</button></div>';
+  if (ADM_TAB === 'assign') return tabs + await assignView();
+  if (ADM_TAB === 'stock') return tabs + await stockView();
+  if (ADM_TAB === 'all') return tabs + allView(reqs);
+  return tabs + mismatchView(reqs);
+}
+function setTab(t) { ADM_TAB = t; render(); }
+function mismatchView(reqs) {
+  const mm = reqs.filter(r => r.status === 'mismatch');
+  return '<h2>账实不符待核销（' + mm.length + '）</h2>' +
+    '<div class="hint">缺失数量<b>不会计入库存</b>，仅在单据上标记，等学校丢失流程处理完成后由资产管理员核销。</div>' +
+    '<table><thead><tr><th>单号</th><th>借用人</th><th>物资</th><th>负责老师</th><th>实发</th><th>实还</th><th>缺失</th><th>操作</th></tr></thead><tbody>' +
+    (mm.map(r => '<tr><td>' + esc(r.code) + '</td><td>' + esc(r.borrower || r.applicant_name) + '</td><td>' + esc(r.material_name) + '</td>' +
+      '<td class="muted">' + esc(r.owner_name || '-') + '</td><td>' + r.issued_qty + '</td><td>' + (r.returned_qty ?? 0) + '</td>' +
+      '<td><b style="color:#a32d2d">' + r.missing_qty + '</b></td>' +
+      '<td class="row"><button class="sm" onclick="closeGo(' + r.id + ')">核销</button>' +
+      '<button class="ghost sm" onclick="detail(' + r.id + ')">详情</button></td></tr>').join('')
+      || '<tr><td colspan="8">无账实不符单据</td></tr>') + '</tbody></table>';
+}
+async function closeGo(id) {
+  const note = prompt('核销说明', '已按学校物资丢失流程处理完毕');
+  if (note === null) return;
+  try { await api('/api/requests/close', { method: 'POST', body: JSON.stringify({ id, note }) }); alert('已核销'); render(); }
+  catch (e) { alert(e.message); }
+}
+async function assignView() {
+  const ms = await api('/api/materials');
+  const staff = await api('/api/warehouse/staff');
+  const byOwner = {};
+  ms.forEach(m => { const k = m.owner_name || '未绑定'; (byOwner[k] = byOwner[k] || []).push(m); });
+  return '<h2>物资负责人绑定</h2>' +
+    '<div class="hint">每种物资由一位仓库老师负责。学生的申领单只会路由给该老师，其他仓库老师无权处理。在此调整绑定后立即生效。</div>' +
+    Object.entries(byOwner).map(([owner, list]) =>
+      '<h2>' + esc(owner) + ' <span class="muted" style="font-weight:400">负责 ' + list.length + ' 种</span></h2>' +
+      '<table><thead><tr><th>物资</th><th>类别</th><th>存放地点</th><th>在库</th><th>已核定待发</th><th>改绑给</th></tr></thead><tbody>' +
+      list.map(m => '<tr><td>' + esc(m.name) + (m.size ? '（' + esc(m.size) + '）' : '') + '</td>' +
+        '<td class="muted">' + esc(m.category || '-') + '</td><td class="muted">' + esc(m.location) + '</td>' +
+        '<td>' + m.available + ' ' + esc(m.unit) + '</td><td>' + m.reserved + '</td>' +
+        '<td><select onchange="assignGo(' + m.id + ',this.value)" style="width:170px">' +
+        staff.map(s => '<option value="' + s.id + '"' + (s.id === m.owner_id ? ' selected' : '') + '>' + esc(s.name) + '</option>').join('') +
+        '</select></td></tr>').join('') + '</tbody></table>').join('');
+}
+async function assignGo(materialId, ownerId) {
+  try { await api('/api/materials', { method: 'POST', body: JSON.stringify({ id: materialId, owner_id: Number(ownerId) }) }); alert('负责人已更新，立即生效'); }
+  catch (e) { alert(e.message); render(); }
+}
+async function stockView() {
+  const ms = await api('/api/materials');
+  const byOwner = {};
+  ms.forEach(m => { const k = m.owner_name || '未绑定'; byOwner[k] = byOwner[k] || { n: 0, q: 0 }; byOwner[k].n++; byOwner[k].q += m.available; });
+  return '<h2>库存总览</h2>' +
+    '<div class="hint">共 ' + ms.length + ' 种物资，账面库存合计 ' + ms.reduce((a, m) => a + m.available, 0) + ' 件。在库 = 账面可用，已核定待发 = 已预占尚未发放。</div>' +
+    '<div class="grid mb">' + Object.entries(byOwner).map(([k, v]) =>
+      '<div class="mcard"><h3 style="margin-top:0">' + esc(k) + '</h3><div class="qty">' + v.q +
+      ' <span style="font-size:13px;color:#6b7684">件在库</span></div><div class="muted">' + v.n + ' 种物资</div></div>').join('') + '</div>' +
+    '<table><thead><tr><th>物资</th><th>规格</th><th>存放</th><th>负责老师</th><th>在库</th><th>已核定待发</th><th>可发放</th></tr></thead><tbody>' +
+    ms.map(m => '<tr><td>' + esc(m.name) + '</td><td class="muted">' + esc(m.size || '-') + '</td><td class="muted">' + esc(m.location) + '</td>' +
+      '<td class="muted">' + esc(m.owner_name || '-') + '</td><td>' + m.available + ' ' + esc(m.unit) + '</td><td>' + m.reserved + '</td>' +
+      '<td><b style="color:#185fa5">' + (m.available - m.reserved) + '</b></td></tr>').join('') + '</tbody></table>';
+}
+function allView(reqs) {
+  return '<h2>全部单据（' + reqs.length + '）</h2>' +
+    '<div class="hint">资产管理员拥有全局视图，可查看所有仓库老师负责的单据。</div>' +
+    '<table><thead><tr><th>单号</th><th>申请人</th><th>物资</th><th>负责老师</th><th>申请</th><th>核定</th><th>实发</th><th>实还</th><th>状态</th><th>操作</th></tr></thead><tbody>' +
+    (reqs.map(r => '<tr><td>' + esc(r.code) + '</td><td>' + esc(r.applicant_name) + '</td><td>' + esc(r.material_name) + '</td>' +
+      '<td class="muted">' + esc(r.owner_name || '-') + '</td><td>' + r.apply_qty + '</td><td>' + (r.approved_qty ?? '-') + '</td>' +
+      '<td>' + (r.issued_qty ?? '-') + '</td><td>' + (r.returned_qty ?? '-') + '</td><td>' + tag(r.status_text) + '</td>' +
+      '<td><button class="ghost sm" onclick="detail(' + r.id + ')">详情</button></td></tr>').join('')
+      || '<tr><td colspan="10">暂无单据</td></tr>') + '</tbody></table>';
+}
+
+/* ================= 详情：独立页面 ================= */
+let DETAIL_BACK = null;
+function detail(id) {
+  DETAIL_BACK = { tab: STU_TAB, admTab: ADM_TAB };
+  openDetail(id);
+}
+async function openDetail(id) {
+  view.innerHTML = '<div class="muted" style="padding:20px">加载中…</div>';
+  let d;
+  try { d = await api('/api/requests/' + id); }
+  catch (e) { view.innerHTML = '<div class="err" style="padding:20px">加载失败：' + esc(e.message) + '</div>'; return; }
+  view.innerHTML = detailPage(d);
+  window.scrollTo({ top: 0 });
+}
+function detailBack() {
+  if (DETAIL_BACK) { STU_TAB = DETAIL_BACK.tab; ADM_TAB = DETAIL_BACK.admTab; }
+  DETAIL_BACK = null; render();
+}
+function detailPage(d) {
+  const unit = d.unit || '件';
+  const logs = d.logs || [];
+  const stock = d.stock_logs || [];
+  const steps = [
+    ['申请', d.apply_qty, true], ['核定', d.approved_qty, d.approved_qty != null],
+    ['实发', d.issued_qty, d.issued_qty != null], ['申报归还', d.return_declared_qty, d.return_declared_qty != null],
+    ['实还', d.returned_qty, d.returned_qty != null],
+  ];
+  const qsteps = steps.map(([k, v, has]) =>
+    '<div class="qstep ' + (has ? 'on' : 'zero') + '"><div class="k">' + k + '</div><div class="v">' +
+    (has ? v : '-') + '<span style="font-size:12px;color:#6b7684"> ' + esc(unit) + '</span></div></div>').join('');
+  const missingCell = d.missing_qty > 0
+    ? '<div class="dcell" style="border-color:#f09595;background:#fcebeb"><div class="k">缺失待处理</div>' +
+      '<div class="v" style="color:#a32d2d">' + d.missing_qty + ' ' + esc(unit) + '</div>' +
+      '<div style="font-size:12px;color:#a32d2d;margin-top:4px">已转学校物资丢失流程，不计入库存</div></div>'
+    : '<div class="dcell"><div class="k">缺失</div><div class="v">0 ' + esc(unit) + '</div></div>';
+  let photos = [];
+  try { photos = JSON.parse(d.return_photos || '[]'); } catch (e) { photos = []; }
+  const photoSec = photos.length
+    ? '<div class="dsec"><h3>归还凭证照片（' + photos.length + ' 张）</h3><div class="row">' +
+      photos.map(x => '<span class="tag">' + esc(x) + '</span>').join('') + '</div></div>' : '';
+  const tl = logs.length
+    ? '<ul class="tl">' + logs.map((l, i) => '<li class="' + (i === logs.length - 1 ? 'cur' : '') + '">' +
+      '<div class="when">' + esc(String(l.created_at).slice(0, 19).replace('T', ' ')) + '</div>' +
+      '<div class="what">' + esc(l.action) + '</div>' +
+      '<div class="who">' + esc(l.operator_name || '系统') +
+      (l.from_status && l.to_status ? ' · ' + esc(fromTo(l)) : '') + (l.note ? ' · ' + esc(l.note) : '') + '</div></li>').join('') + '</ul>'
+    : '<div class="muted">暂无流转记录</div>';
+  const stockRows = stock.length
+    ? '<table><thead><tr><th>时间</th><th>类型</th><th>变动</th><th>变动前</th><th>变动后</th><th>说明</th></tr></thead><tbody>' +
+      stock.map(l => '<tr><td class="muted">' + esc(String(l.created_at).slice(5, 19).replace('T', ' ')) + '</td>' +
+        '<td>' + esc(bizText(l.biz_type)) + '</td>' +
+        '<td style="color:' + (l.change_qty > 0 ? '#0f6e56' : '#a32d2d') + '">' + (l.change_qty > 0 ? '+' : '') + l.change_qty + '</td>' +
+        '<td>' + l.before_qty + '</td><td>' + l.after_qty + '</td>' +
+        '<td class="muted">' + esc(l.remark || '-') + '</td></tr>').join('') + '</tbody></table>'
+    : '<div class="muted">该单据暂无库存变动</div>';
+  return '<div class="dback"><button class="ghost" onclick="detailBack()">← 返回列表</button></div>' +
+    '<div class="dhead"><h2>' + esc(d.material_name) +
+    (d.size ? ' <span class="muted" style="font-weight:400;font-size:14px">' + esc(d.size) + '</span>' : '') + '</h2>' +
+    '<div class="muted" style="font-size:13px">单号 ' + esc(d.code) + '</div>' +
+    '<div style="margin-top:10px">' + tag(d.status_text) + '</div>' +
+    '<div class="qsteps">' + qsteps + '</div>' +
+    '<div class="dgrid">' + missingCell +
+    '<div class="dcell"><div class="k">申请人工号</div><div class="v">' + esc(d.applicant_no || '-') + '</div></div>' +
+    '<div class="dcell"><div class="k">借用人</div><div class="v">' + esc(d.borrower || d.applicant_name) + '</div></div>' +
+    '<div class="dcell"><div class="k">联系电话</div><div class="v">' + esc(d.phone || '-') + '</div></div>' +
+    '</div></div>' +
+    '<div class="dsec"><h3>物资与流程信息</h3><div class="dgrid">' +
+    '<div class="dcell"><div class="k">物资类别</div><div class="v">' + esc(d.material_category || '-') + '</div></div>' +
+    '<div class="dcell"><div class="k">存放地点</div><div class="v">' + esc(d.location || '-') + '</div></div>' +
+    '<div class="dcell"><div class="k">负责老师</div><div class="v">' + esc(d.owner_name || '未绑定') +
+    (d.owner_phone ? '<div style="font-size:12px;color:#6b7684">' + esc(d.owner_phone) + '</div>' : '') + '</div></div>' +
+    '<div class="dcell"><div class="k">使用时间</div><div class="v">' + esc(d.use_start || '-') + ' ~ ' + esc(d.use_end || '-') + '</div></div>' +
+    '<div class="dcell" style="grid-column:1/-1"><div class="k">用途</div><div class="v">' + esc(d.purpose || '-') + '</div></div>' +
+    '<div class="dcell" style="grid-column:1/-1"><div class="k">抵押备注</div><div class="v">' + esc(d.deposit_note || '-') + '</div></div>' +
+    '</div></div>' + photoSec +
+    '<div class="dsec"><h3>流转记录（' + logs.length + '）</h3>' + tl + '</div>' +
+    '<div class="dsec"><h3>库存流水（' + stock.length + '）</h3>' + stockRows + '</div>';
+}
+const fromTo = (l) => {
+  const f = STATUS_TEXT[l.from_status] || l.from_status || '-';
+  const t = STATUS_TEXT[l.to_status] || l.to_status || '-';
+  return f === t ? f : f + ' → ' + t;
+};
+boot();
+</script>
+</body>
+</html>
