@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<!--
+  页面名称：交接单（生成 / 预览 / 打印）
+  所属角色：部门用户（流转双方均可生成与打印）
+  依赖 API：GET /api/handovers/{no}、POST /api/handovers/{no}/print、
+            GET /api/handovers/{no}/export?format=docx|pdf
+  打印方式：浏览器原生 window.print()，打印前会记录一次打印日志
+  导出方式：服务端用 python-docx / reportlab 真实生成标准 docx、pdf 文件（含签字栏）
+-->
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>交接单 · 公共资产闲置平台</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="/js/common.css" />
+    <style>
+        .sheet {
+            max-width: 820px;
+            margin: 0 auto;
+            background: #ffffff;
+            border: 1px solid var(--line);
+            border-radius: 10px;
+            padding: 32px 36px;
+        }
+
+        .sheet h1 {
+            text-align: center;
+            font-size: 22px;
+            font-weight: 700;
+            letter-spacing: 4px;
+            margin: 0 0 6px;
+        }
+
+        .sheet .sub {
+            text-align: center;
+            color: var(--muted);
+            font-size: 12px;
+            margin-bottom: 18px;
+        }
+
+        .kv td {
+            border: 1px solid var(--line);
+            padding: 9px 12px;
+        }
+
+        .kv th {
+            border: 1px solid var(--line);
+            background: #f9fafb;
+            padding: 9px 12px;
+            width: 130px;
+            white-space: nowrap;
+        }
+
+        .sign td {
+            height: 78px;
+            vertical-align: bottom;
+            border: 1px solid var(--line);
+            padding: 9px 12px;
+        }
+
+        @media print {
+            .sheet {
+                border: none;
+                border-radius: 0;
+                padding: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="page">
+        <div id="sheet" class="sheet">
+            <div class="empty">加载中...</div>
+        </div>
+
+        <div class="no-print flex gap-2 mt-4" id="ops" style="max-width:820px;margin-left:auto;margin-right:auto">
+            <button class="btn btn-sm" id="btn-print">打印交接单</button>
+            <button class="btn btn-outline btn-sm" id="btn-word">导出 Word</button>
+            <button class="btn btn-outline btn-sm" id="btn-pdf">导出 PDF</button>
+            <a class="btn btn-outline btn-sm" href="/user/records.html">我的记录</a>
+            <a class="btn btn-outline btn-sm" href="/user/browse.html">返回平台</a>
+        </div>
+    </div>
+
+    <script src="/js/api.js"></script>
+    <script src="/js/common.js"></script>
+    <script>
+        PAIP.boot({
+            role: "user",
+            active: "records",
+            init: function (user) {
+                var no = PAIP.qs("no");
+                var sheet = document.getElementById("sheet");
+
+                if (!no) {
+                    sheet.innerHTML = '<div class="alert alert-error">缺少交接单号参数</div>';
+                    return;
+                }
+
+                API.getHandover(no)
+                    .then(function (h) {
+                        sheet.innerHTML =
+                            '<h1>闲置资产交接单</h1>' +
+                            '<div class="sub">公共资产闲置平台 · 单号 ' + PAIP.escapeHtml(h.handover_no) + "</div>" +
+                            '<table class="table kv" style="border-collapse:collapse">' +
+                            "<tr><th>资产编号</th><td class='mono'>" + PAIP.escapeHtml(h.asset_no || "-") + "</td>" +
+                            "<th>资产名称</th><td>" + PAIP.escapeHtml(h.asset_name || "-") + "</td></tr>" +
+                            "<tr><th>计量单位</th><td>" + PAIP.escapeHtml(h.unit || "-") + "</td>" +
+                            "<th>数量</th><td><b>" + h.quantity + "</b></td></tr>" +
+                            "<tr><th>转出部门</th><td>" + PAIP.escapeHtml(h.from_dept_name || "-") + "</td>" +
+                            "<th>转入部门</th><td>" + PAIP.escapeHtml(h.to_dept_name || "-") + "</td></tr>" +
+                            "<tr><th>接收人姓名</th><td>" + PAIP.escapeHtml(h.receiver_name || "-") + "</td>" +
+                            "<th>接收人工号</th><td class='mono'>" + PAIP.escapeHtml(h.receiver_emp_no || "-") + "</td></tr>" +
+                            "<tr><th>使用人</th><td>" + PAIP.escapeHtml(h.using_person || "-") + "</td>" +
+                            "<th>使用方向</th><td>" + PAIP.escapeHtml(h.usage_direction || "-") + "</td></tr>" +
+                            "<tr><th>使用的管理部门</th><td>" + PAIP.escapeHtml(h.manage_dept || "-") + "</td>" +
+                            "<th>存放地点</th><td>" + PAIP.escapeHtml(h.location || "-") + "</td></tr>" +
+                            "<tr><th>联系人</th><td>" + PAIP.escapeHtml(h.contact_person || "-") + "</td>" +
+                            "<th>联系电话</th><td class='mono'>" + PAIP.escapeHtml(h.contact_phone || "-") + "</td></tr>" +
+                            "<tr><th>交接时间</th><td>" + PAIP.escapeHtml(h.claim_time || "-") + "</td>" +
+                            "<th>生成人 / 时间</th><td>" + PAIP.escapeHtml(h.generated_by_name || "-") + " / " +
+                            PAIP.escapeHtml(h.generated_time || "-") + "</td></tr>" +
+                            "<tr><th>备注</th><td colspan='3'>" + PAIP.escapeHtml(h.remark || "-") + "</td></tr>" +
+                            "</table>" +
+                            '<table class="table sign" style="border-collapse:collapse;margin-top:16px">' +
+                            "<tr><th style='width:130px'>转出部门签字</th><td></td>" +
+                            "<th style='width:130px'>转入部门签字</th><td></td></tr>" +
+                            "<tr><th>经办人签字</th><td></td><th>日期</th><td></td></tr>" +
+                            "</table>" +
+                            '<div class="muted" style="font-size:12px;margin-top:12px">' +
+                            "本交接单由公共资产闲置平台生成，流转记录与打印行为均记入日志中心，不可删除。" +
+                            "</div>";
+
+                    document.getElementById("btn-print").onclick = function () {
+                        API.logPrint(no)
+                            .catch(function () {})
+                            .then(function () {
+                                window.print();
+                            });
+                    };
+
+                    // 服务端真实生成 docx / pdf；下载必须带 JWT，因此走 PAIP.downloadFile
+                    function exportAs(fmt, defaultName) {
+                        var btn = document.getElementById(fmt === "pdf" ? "btn-pdf" : "btn-word");
+                        btn.disabled = true;
+                        PAIP.downloadFile(
+                            "/api/handovers/" + encodeURIComponent(no) + "/export?format=" + fmt,
+                            defaultName
+                        )
+                            .then(function () {
+                                PAIP.toast("已导出 " + fmt.toUpperCase(), "success");
+                                btn.disabled = false;
+                            })
+                            .catch(function (e) {
+                                PAIP.toast(e.message, "error");
+                                btn.disabled = false;
+                            });
+                    }
+                    document.getElementById("btn-word").onclick = function () {
+                        exportAs("docx", "交接单_" + no + ".docx");
+                    };
+                    document.getElementById("btn-pdf").onclick = function () {
+                        exportAs("pdf", "交接单_" + no + ".pdf");
+                    };
+                })
+                .catch(function (e) {
+                    sheet.innerHTML = '<div class="alert alert-error">' + PAIP.escapeHtml(e.message) + "</div>";
+                });
+            },
+        });
+    </script>
+</body>
+</html>

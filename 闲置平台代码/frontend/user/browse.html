@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<!--
+  页面名称：公共资产闲置平台浏览 / 搜索页（共享池）
+  所属角色：部门用户（所有上架物资集中展示，全员可见可认领）
+  依赖 API：GET /api/assets、GET /api/colleges、GET /api/assets/meta/options
+-->
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>平台浏览 · 公共资产闲置平台</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="/js/common.css" />
+</head>
+<body>
+    <div class="page">
+        <div class="flex flex-wrap items-end justify-between gap-3 mb-4">
+            <div>
+                <h1 class="page-title">公共资产闲置平台</h1>
+                <div class="page-sub" id="summary">加载中...</div>
+            </div>
+            <div class="flex gap-2 no-print">
+                <a class="btn" href="/user/publish.html">+ 发布物资</a>
+                <a class="btn btn-outline" href="/user/records.html">我的记录</a>
+            </div>
+        </div>
+
+        <div class="toolbar no-print">
+            <div class="field">
+                <label class="label">资产名称 / 编号</label>
+                <input class="input" id="f-keyword" placeholder="模糊搜索" />
+            </div>
+            <div class="field">
+                <label class="label">分类</label>
+                <select class="select" id="f-category"><option value="">全部</option></select>
+            </div>
+            <div class="field">
+                <label class="label">专业学院</label>
+                <select class="select" id="f-college"><option value="">全部</option></select>
+            </div>
+            <div class="field">
+                <label class="label">下设部门</label>
+                <select class="select" id="f-department"><option value="">全部</option></select>
+            </div>
+            <div class="field">
+                <label class="label">使用管理部门</label>
+                <select class="select" id="f-manage"><option value="">全部</option></select>
+            </div>
+            <div class="field">
+                <label class="label">存放地点</label>
+                <select class="select" id="f-location"><option value="">全部</option></select>
+            </div>
+            <div class="field">
+                <label class="label">状态</label>
+                <select class="select" id="f-status">
+                    <option value="">全部</option>
+                    <option value="on">上架</option>
+                    <option value="off">已下架</option>
+                    <option value="disabled">已停用</option>
+                </select>
+            </div>
+            <div class="field" style="min-width:120px">
+                <label class="label">剩余 ≥</label>
+                <input class="input" id="f-min" type="number" min="0" placeholder="不限" />
+            </div>
+            <div class="field" style="min-width:140px">
+                <label class="label">排序</label>
+                <select class="select" id="f-sort">
+                    <option value="latest">最新发布</option>
+                    <option value="remaining">剩余数量</option>
+                    <option value="asset_no">资产编号</option>
+                </select>
+            </div>
+            <button class="btn btn-sm" id="btn-search">搜索</button>
+            <button class="btn btn-outline btn-sm" id="btn-reset">重置</button>
+        </div>
+
+        <div id="list" class="grid-cards"></div>
+    </div>
+
+    <script src="/js/api.js"></script>
+    <script src="/js/common.js"></script>
+    <script>
+        PAIP.boot({
+            role: "user",
+            active: "browse",
+            init: function (user) {
+                var colleges = [];
+                var collegeSel = document.getElementById("f-college");
+                var deptSel = document.getElementById("f-department");
+
+                function renderDepartments() {
+                    var cid = parseInt(collegeSel.value, 10);
+                    var college = colleges.filter(function (c) { return c.id === cid; })[0];
+                    var depts = college ? college.departments : [];
+                    deptSel.innerHTML =
+                        '<option value="">全部</option>' +
+                        depts
+                            .map(function (d) {
+                                return '<option value="' + d.id + '">' + PAIP.escapeHtml(d.name) + "</option>";
+                            })
+                            .join("");
+                }
+
+                API.colleges().then(function (data) {
+                    colleges = data;
+                    collegeSel.innerHTML =
+                        '<option value="">全部</option>' +
+                        data
+                            .map(function (c) {
+                                return '<option value="' + c.id + '">' + PAIP.escapeHtml(c.name) + "</option>";
+                            })
+                            .join("");
+                    renderDepartments();
+                });
+                collegeSel.addEventListener("change", renderDepartments);
+
+                API.assetOptions().then(function (opt) {
+                    function fill(id, arr) {
+                        document.getElementById(id).innerHTML =
+                            '<option value="">全部</option>' +
+                            arr
+                                .map(function (c) {
+                                    return '<option value="' + PAIP.escapeHtml(c) + '">' + PAIP.escapeHtml(c) + "</option>";
+                                })
+                                .join("");
+                    }
+                    fill("f-category", opt.categories);
+                    fill("f-manage", opt.manage_depts);
+                    fill("f-location", opt.locations);
+                });
+
+                function load() {
+                    var params = {
+                        keyword: document.getElementById("f-keyword").value.trim(),
+                        category: document.getElementById("f-category").value,
+                        college_id: collegeSel.value,
+                        department_id: deptSel.value,
+                        manage_dept: document.getElementById("f-manage").value,
+                        location: document.getElementById("f-location").value,
+                        status: document.getElementById("f-status").value,
+                        min_remaining: document.getElementById("f-min").value,
+                        sort: document.getElementById("f-sort").value,
+                    };
+                    API.listAssets(params)
+                        .then(function (list) {
+                            var onCount = list.filter(function (a) { return a.status === "on"; }).length;
+                            document.getElementById("summary").textContent =
+                                "共 " + list.length + " 条物资，其中上架 " + onCount + " 条 · 当前登录：" +
+                                (user.dept_full_name || "-");
+                            var box = document.getElementById("list");
+                            if (!list.length) {
+                                box.innerHTML = '<div class="empty">没有符合条件的物资，试试调整筛选条件</div>';
+                                return;
+                            }
+                            box.innerHTML = list
+                                .map(function (a) {
+                                    var canClaim = a.status === "on" && a.remaining_count > 0;
+                                    return (
+                                        '<div class="card">' +
+                                        '<img class="thumb" src="' + (a.cover || "") + '" alt="' + PAIP.escapeHtml(a.name) + '" />' +
+                                        '<div class="card-body">' +
+                                        '<div class="card-title">' + PAIP.escapeHtml(a.name) + " " + PAIP.statusBadge(a.status) + "</div>" +
+                                        '<div class="mono muted" style="font-size:12px">' + PAIP.escapeHtml(a.asset_no) + "</div>" +
+                                        '<div style="margin-top:8px;font-size:13px">' +
+                                        '<div>剩余 <b style="color:#dc2626;font-size:16px">' + a.remaining_count +
+                                        '</b> ' + PAIP.escapeHtml(a.unit) + ' / 总数 ' + a.total_count + "</div>" +
+                                        "<div>分类：" + PAIP.escapeHtml(a.category || "-") + "</div>" +
+                                        "<div>存放地点：" + PAIP.escapeHtml(a.location || "-") + "</div>" +
+                                        "<div>管理部门：" + PAIP.escapeHtml(a.manage_dept || "-") + "</div>" +
+                                        '<div class="muted" style="font-size:12px">发布：' +
+                                        PAIP.escapeHtml(a.dept_full_name || "-") + " · " + PAIP.escapeHtml(a.publish_time) + "</div>" +
+                                        "</div>" +
+                                        '<div style="margin-top:10px;display:flex;gap:8px">' +
+                                        '<a class="btn ' + (canClaim ? "" : "btn-outline") + ' btn-sm" href="/user/asset.html?id=' +
+                                        a.id + '">' + (canClaim ? "认领 / 详情" : "查看详情") + "</a>" +
+                                        "</div></div></div>"
+                                    );
+                                })
+                                .join("");
+                        })
+                        .catch(function (e) {
+                            PAIP.toast(e.message, "error");
+                        });
+                }
+
+                document.getElementById("btn-search").addEventListener("click", load);
+                document.getElementById("btn-reset").addEventListener("click", function () {
+                    ["f-keyword", "f-category", "f-manage", "f-location", "f-status", "f-min"].forEach(function (id) {
+                        document.getElementById(id).value = "";
+                    });
+                    collegeSel.value = "";
+                    renderDepartments();
+                    load();
+                });
+
+                load();
+            },
+        });
+    </script>
+</body>
+</html>

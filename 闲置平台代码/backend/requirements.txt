@@ -1,0 +1,11 @@
+# 后端运行依赖（纯 Python 轮子，无需编译环境）
+fastapi==0.115.6
+uvicorn[standard]==0.34.0
+SQLAlchemy==2.0.36
+pydantic==2.10.4
+PyJWT==2.10.1
+python-multipart==0.0.20
+Pillow==11.0.0
+# 交接单服务端导出：Word / PDF 真实生成
+python-docx==1.2.0
+reportlab==5.0.1

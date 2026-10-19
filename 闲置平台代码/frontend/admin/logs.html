@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<!--
+  页面名称：日志中心
+  所属角色：平台管理员
+  依赖 API：GET /api/admin/logs、GET /api/admin/logs/types、GET /api/admin/logs/export
+  说明：日志只可查看与导出，系统不提供删除接口
+-->
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>日志中心 · 公共资产闲置平台</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="/js/common.css" />
+</head>
+<body>
+    <div class="page">
+        <div class="flex flex-wrap items-end justify-between gap-3 mb-4">
+            <div>
+                <h1 class="page-title">日志中心</h1>
+                <div class="page-sub">
+                    覆盖发布、修改、下架、重新挂牌、认领、撤销认领、图片上传/驳回、组织与用户变更、交接单生成与打印
+                </div>
+            </div>
+            <button class="btn btn-sm no-print" id="btn-export">导出 CSV</button>
+        </div>
+
+        <div class="toolbar no-print">
+            <div class="field"><label class="label">操作类型</label><select class="select" id="f-type"></select></div>
+            <div class="field"><label class="label">操作人</label><input class="input" id="f-operator" /></div>
+            <div class="field"><label class="label">工号</label><input class="input mono" id="f-emp" /></div>
+            <div class="field"><label class="label">部门</label><input class="input" id="f-dept" /></div>
+            <div class="field"><label class="label">资产编号</label><input class="input mono" id="f-asset" /></div>
+            <div class="field"><label class="label">起始日期</label><input class="input" id="f-start" type="date" /></div>
+            <div class="field"><label class="label">截止日期</label><input class="input" id="f-end" type="date" /></div>
+            <button class="btn btn-sm" id="btn-search">查询</button>
+            <button class="btn btn-outline btn-sm" id="btn-reset">重置</button>
+        </div>
+
+        <div id="log-list"></div>
+    </div>
+
+    <script src="/js/api.js"></script>
+    <script src="/js/common.js"></script>
+    <script>
+        PAIP.boot({
+            role: "admin",
+            active: "logs",
+            init: function () {
+                var box = document.getElementById("log-list");
+
+                API.logTypes().then(function (types) {
+                    document.getElementById("f-type").innerHTML =
+                        '<option value="">全部</option>' +
+                        types
+                            .map(function (t) {
+                                return '<option value="' + t.value + '">' + PAIP.escapeHtml(t.label) + "</option>";
+                            })
+                            .join("");
+                });
+
+                function params() {
+                    return {
+                        type: document.getElementById("f-type").value,
+                        operator: document.getElementById("f-operator").value.trim(),
+                        emp_no: document.getElementById("f-emp").value.trim(),
+                        dept: document.getElementById("f-dept").value.trim(),
+                        asset_no: document.getElementById("f-asset").value.trim(),
+                        start: document.getElementById("f-start").value,
+                        end: document.getElementById("f-end").value,
+                    };
+                }
+
+                function load() {
+                    API.listLogs(params())
+                        .then(render)
+                        .catch(function (e) { PAIP.toast(e.message, "error"); });
+                }
+
+                function render(list) {
+                    if (!list.length) {
+                        box.innerHTML = '<div class="empty">暂无日志</div>';
+                        return;
+                    }
+                    box.innerHTML =
+                        '<div class="card"><table class="table"><thead><tr>' +
+                        "<th>时间</th><th>操作类型</th><th>操作人</th><th>工号</th><th>部门</th><th>资产编号</th>" +
+                        "<th>数量</th><th>详情</th></tr></thead><tbody>" +
+                        list
+                            .map(function (l) {
+                                return (
+                                    "<tr><td class='mono'>" + PAIP.escapeHtml(l.time) + "</td>" +
+                                    "<td><span class='badge badge-info'>" + PAIP.escapeHtml(l.type_label) + "</span></td>" +
+                                    "<td>" + PAIP.escapeHtml(l.operator_name) + "</td>" +
+                                    "<td class='mono'>" + PAIP.escapeHtml(l.emp_no || "-") + "</td>" +
+                                    "<td>" + PAIP.escapeHtml(l.dept_name || "-") + "</td>" +
+                                    "<td class='mono'>" + PAIP.escapeHtml(l.asset_no || "-") + "</td>" +
+                                    "<td>" + (l.quantity === null || l.quantity === undefined ? "-" : l.quantity) + "</td>" +
+                                    "<td>" + PAIP.escapeHtml(l.detail) + "</td></tr>"
+                                );
+                            })
+                            .join("") +
+                        "</tbody></table></div>";
+                }
+
+                document.getElementById("btn-search").onclick = load;
+                document.getElementById("btn-reset").onclick = function () {
+                    ["f-type", "f-operator", "f-emp", "f-dept", "f-asset", "f-start", "f-end"].forEach(function (id) {
+                        document.getElementById(id).value = "";
+                    });
+                    load();
+                };
+                document.getElementById("btn-export").onclick = function () {
+                    var btn = this;
+                    btn.disabled = true;
+                    // 必须带 JWT 下载：location.href 跳转不带 Authorization 头会被 401 拒绝
+                    PAIP.downloadFile(
+                        "/api/admin/logs/export" + PAIP.toQuery(params()),
+                        "日志导出.csv"
+                    )
+                        .then(function () {
+                            PAIP.toast("日志已导出", "success");
+                            btn.disabled = false;
+                        })
+                        .catch(function (e) {
+                            PAIP.toast(e.message, "error");
+                            btn.disabled = false;
+                        });
+                };
+
+                load();
+            },
+        });
+    </script>
+</body>
+</html>

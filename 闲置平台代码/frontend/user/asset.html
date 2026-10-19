@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<!--
+  页面名称：物资详情页（含认领）
+  所属角色：部门用户
+  依赖 API：GET /api/assets/{id}、POST /api/claims、POST /api/handovers
+  认领规则：认领数量 ≤ 剩余；总数 − 已认领 = 剩余；剩余 = 0 自动下架；记录接收人、工号、部门、时间
+-->
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>物资详情 · 公共资产闲置平台</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="/js/common.css" />
+</head>
+<body>
+    <div class="page" id="root">
+        <div class="empty">加载中...</div>
+    </div>
+
+    <script src="/js/api.js"></script>
+    <script src="/js/common.js"></script>
+    <script>
+        PAIP.boot({
+            role: "user",
+            active: "browse",
+            init: function (user) {
+                var assetId = PAIP.qs("id");
+                var root = document.getElementById("root");
+                var current = null;
+
+                function load() {
+                    API.getAsset(assetId)
+                        .then(function (a) {
+                            current = a;
+                            render(a);
+                        })
+                        .catch(function (e) {
+                            root.innerHTML = '<div class="alert alert-error">' + PAIP.escapeHtml(e.message) + "</div>";
+                        });
+                }
+
+                function imgBlock(a) {
+                    if (!a.images.length) return '<div class="empty">暂无图片</div>';
+                    return (
+                        '<div class="card"><div class="card-body">' +
+                        '<img id="main-img" class="thumb" style="height:320px" src="' + a.images[0].url + '" alt="物资照片" />' +
+                        '<div id="cap" class="alert alert-info" style="margin-top:8px">' +
+                        "在哪儿：" + PAIP.escapeHtml(a.location || "-") + " ｜ " +
+                        "长什么样：" + PAIP.escapeHtml(a.images[0].caption || a.name) + " ｜ " +
+                        "什么尺寸：" + PAIP.escapeHtml(a.spec || "-") + " ｜ " +
+                        "有多少个：剩余 " + a.remaining_count + PAIP.escapeHtml(a.unit) + " ｜ " +
+                        "成色状态：" + PAIP.escapeHtml(a.condition_desc || "-") +
+                        "</div>" +
+                        '<div class="flex gap-2 flex-wrap">' +
+                        a.images
+                            .map(function (im, idx) {
+                                return (
+                                    '<img class="thumb-sm" style="cursor:pointer;border-color:' +
+                                    (idx === 0 ? "var(--brand)" : "var(--line)") + '" data-idx="' + idx +
+                                    '" data-url="' + im.url + '" data-cap="' + PAIP.escapeHtml(im.caption || "") +
+                                    '" src="' + im.url + '" alt="缩略图" />'
+                                );
+                            })
+                            .join("") +
+                        "</div></div></div>"
+                    );
+                }
+
+                function render(a) {
+                    var isOwner = a.department_id === user.department_id;
+                    var canClaim = a.status === "on" && a.remaining_count > 0 && !isOwner;
+
+                    var rows = [
+                        ["资产编号", a.asset_no], ["资产名称", a.name], ["分类", a.category],
+                        ["计量单位", a.unit], ["尺寸规格", a.spec], ["总数", a.total_count],
+                        ["已认领", a.claimed_count], ["剩余", a.remaining_count],
+                        ["成色/状态说明", a.condition_desc], ["备注", a.remark],
+                        ["使用人", a.using_person], ["使用方向", a.usage_direction],
+                        ["使用的管理部门", a.manage_dept], ["存放地点", a.location],
+                        ["联系人", a.contact_person], ["联系人工号", a.contact_emp_no],
+                        ["联系电话", a.contact_phone], ["发布学院/部门", a.dept_full_name],
+                        ["发布人", a.publisher_name + (a.publisher_emp_no ? "（" + a.publisher_emp_no + "）" : "")],
+                        ["发布时间", a.publish_time], ["当前状态", a.status],
+                    ];
+
+                    root.innerHTML =
+                        '<div class="flex flex-wrap items-end justify-between gap-3 mb-4">' +
+                        "<div><h1 class=\"page-title\">" + PAIP.escapeHtml(a.name) + " " + PAIP.statusBadge(a.status) + "</h1>" +
+                        '<div class="page-sub mono">资产编号 ' + PAIP.escapeHtml(a.asset_no) + " · 发布部门 " +
+                        PAIP.escapeHtml(a.dept_full_name) + "</div></div>" +
+                        '<div class="flex gap-2 no-print">' +
+                        (isOwner
+                            ? a.status === "on"
+                                ? '<button class="btn btn-outline btn-sm" id="btn-off">下架</button>'
+                                : '<button class="btn btn-success btn-sm" id="btn-relist">重新挂牌</button>'
+                            : canClaim
+                            ? '<button class="btn btn-sm" id="btn-to-claim">认领</button>'
+                            : "") +
+                        '<a class="btn btn-outline btn-sm" href="/user/browse.html">返回平台</a>' +
+                        "</div></div>" +
+                        '<div class="grid grid-cols-1 lg:grid-cols-2 gap-4">' +
+                        imgBlock(a) +
+                        '<div class="card"><div class="card-body">' +
+                        '<h2 class="card-title">资产全部字段</h2>' +
+                        '<table class="table"><tbody>' +
+                        rows
+                            .map(function (r) {
+                                return (
+                                    "<tr><th style='width:130px'>" + PAIP.escapeHtml(r[0]) + "</th><td>" +
+                                    (r[1] === null || r[1] === undefined || r[1] === ""
+                                        ? '<span class="muted">-</span>'
+                                        : PAIP.escapeHtml(r[1])) +
+                                    "</td></tr>"
+                                );
+                            })
+                            .join("") +
+                        "</tbody></table>" +
+                        "</div></div></div>" +
+                        '<div class="card mt-4"><div class="card-body">' +
+                        '<h2 class="card-title">流转记录（谁从哪个部门转到哪个部门）</h2>' +
+                        (a.transfers.length
+                            ? '<table class="table"><thead><tr><th>时间</th><th>资产编号</th><th>资产名称</th>' +
+                              "<th>数量</th><th>转出部门</th><th>转入部门</th><th>接收人</th><th>工号</th><th>交接单</th></tr></thead><tbody>" +
+                              a.transfers
+                                  .map(function (c) {
+                                      var canGen =
+                                          c.from_dept_id === user.department_id ||
+                                          c.to_dept_id === user.department_id;
+                                      return (
+                                          "<tr><td>" + PAIP.escapeHtml(c.claim_time) + "</td>" +
+                                          "<td class='mono'>" + PAIP.escapeHtml(c.asset_no) + "</td>" +
+                                          "<td>" + PAIP.escapeHtml(c.asset_name) + "</td>" +
+                                          "<td>" + c.quantity + PAIP.escapeHtml(c.unit || "") + "</td>" +
+                                          "<td>" + PAIP.escapeHtml(c.from_dept_name) + "</td>" +
+                                          "<td>" + PAIP.escapeHtml(c.to_dept_name) + "</td>" +
+                                          "<td>" + PAIP.escapeHtml(c.receiver_name) + "</td>" +
+                                          "<td class='mono'>" + PAIP.escapeHtml(c.receiver_emp_no) + "</td>" +
+                                          "<td>" + (c.handover_no
+                                              ? '<a href="/user/handover.html?no=' + encodeURIComponent(c.handover_no) + '">' +
+                                                PAIP.escapeHtml(c.handover_no) + "</a>"
+                                              : canGen
+                                              ? '<button class="btn btn-outline btn-sm" data-handover="' + c.id + '">生成交接单</button>'
+                                              : '<span class="muted">-</span>') +
+                                          "</td></tr>"
+                                      );
+                                  })
+                                  .join("") +
+                              "</tbody></table>"
+                            : '<div class="empty">暂无流转记录</div>') +
+                        "</div></div>" +
+                        (canClaim ? claimForm(a, user) : "") +
+                        (isOwner
+                            ? '<div class="alert alert-info mt-4">这是本部门发布的物资，不可认领；如需收回可先下架。</div>'
+                            : !canClaim
+                            ? '<div class="alert alert-info mt-4">该物资已下架或无剩余，不可认领。</div>'
+                            : "");
+
+                    bindImageSwitch(a);
+                    bindClaim(a, user);
+                    bindHandoverButtons();
+
+                    var offBtn = document.getElementById("btn-off");
+                    if (offBtn)
+                        offBtn.onclick = function () {
+                            PAIP.confirmBox("下架确认", "确认下架该物资？", function () {
+                                API.unlistAsset(a.id)
+                                    .then(function () {
+                                        PAIP.toast("已下架", "success");
+                                        load();
+                                    })
+                                    .catch(function (e) {
+                                        PAIP.toast(e.message, "error");
+                                    });
+                            });
+                        };
+                    var relistBtn = document.getElementById("btn-relist");
+                    if (relistBtn)
+                        relistBtn.onclick = function () {
+                            API.relistAsset(a.id)
+                                .then(function () {
+                                    PAIP.toast("已重新挂牌", "success");
+                                    load();
+                                })
+                                .catch(function (e) {
+                                    PAIP.toast(e.message, "error");
+                                });
+                        };
+                }
+
+                function claimForm(a, user) {
+                    return (
+                        '<div class="card mt-4"><div class="card-body">' +
+                        '<h2 class="card-title">认领（线下确认后填写）</h2>' +
+                        '<div class="alert alert-info">当前剩余 <b>' + a.remaining_count + "</b> " +
+                        PAIP.escapeHtml(a.unit) + "，认领数量不得大于剩余；剩余归零后系统自动下架。</div>" +
+                        '<div class="grid grid-cols-1 md:grid-cols-3 gap-4">' +
+                        '<div class="field"><label class="label">本次认领数量 <span style="color:#dc2626">*</span></label>' +
+                        '<input class="input" id="c-qty" type="number" min="1" max="' + a.remaining_count + '" value="1" /></div>' +
+                        '<div class="field"><label class="label">接收人姓名 <span style="color:#dc2626">*</span></label>' +
+                        '<input class="input" id="c-name" value="' + PAIP.escapeHtml(user.name || "") + '" /></div>' +
+                        '<div class="field"><label class="label">接收人工号 <span style="color:#dc2626">*</span></label>' +
+                        '<input class="input mono" id="c-emp" value="' + PAIP.escapeHtml(user.employee_no || "") + '" /></div>' +
+                        '<div class="field"><label class="label">认领学院</label>' +
+                        '<select class="select" id="c-college"></select></div>' +
+                        '<div class="field"><label class="label">认领部门</label>' +
+                        '<select class="select" id="c-dept"></select>' +
+                        '<div class="muted" style="font-size:11px;margin-top:4px">默认本部门（' +
+                        PAIP.escapeHtml(user.dept_full_name || "-") + "），可改为代其他部门接收。</div></div>" +
+                        '<div class="field"><label class="label">联系电话</label>' +
+                        '<input class="input mono" id="c-phone" value="' + PAIP.escapeHtml(user.phone || "") + '" /></div>' +
+                        '<div class="field"><label class="label">备注</label>' +
+                        '<input class="input" id="c-remark" /></div>' +
+                        "</div>" +
+                        '<div id="c-preview" class="alert alert-info hidden"></div>' +
+                        '<div class="no-print flex gap-2">' +
+                        '<button class="btn btn-sm" id="btn-recv">接收（实时扣减预览）</button>' +
+                        '<button class="btn btn-success btn-sm hidden" id="btn-confirm">确认领走</button>' +
+                        "</div></div></div>"
+                    );
+                }
+
+                function bindImageSwitch(a) {
+                    var main = document.getElementById("main-img");
+                    var cap = document.getElementById("cap");
+                    document.querySelectorAll("[data-idx]").forEach(function (t) {
+                        t.onclick = function () {
+                            main.src = t.getAttribute("data-url");
+                            var c = t.getAttribute("data-cap") || "";
+                            cap.innerHTML =
+                                "在哪儿：" + PAIP.escapeHtml(a.location || "-") + " ｜ " +
+                                "长什么样：" + PAIP.escapeHtml(c || a.name) + " ｜ " +
+                                "什么尺寸：" + PAIP.escapeHtml(a.spec || "-") + " ｜ " +
+                                "有多少个：剩余 " + a.remaining_count + PAIP.escapeHtml(a.unit) + " ｜ " +
+                                "成色状态：" + PAIP.escapeHtml(a.condition_desc || "-");
+                        };
+                    });
+                }
+
+                /** 绑定所有「生成交接单」按钮（认领表单是否存在都要绑定） */
+                function bindHandoverButtons() {
+                    document.querySelectorAll("[data-handover]").forEach(function (b) {
+                        b.onclick = function () {
+                            API.createHandover(parseInt(b.getAttribute("data-handover"), 10))
+                                .then(function (h) {
+                                    PAIP.toast("交接单已生成：" + h.handover_no, "success");
+                                    location.href = "/user/handover.html?no=" + encodeURIComponent(h.handover_no);
+                                })
+                                .catch(function (e) {
+                                    PAIP.toast(e.message, "error");
+                                });
+                        };
+                    });
+                }
+
+                function bindClaim(a, user) {
+                    var recvBtn = document.getElementById("btn-recv");
+                    var confirmBtn = document.getElementById("btn-confirm");
+                    var preview = document.getElementById("c-preview");
+                    if (!recvBtn) return;
+
+                    // 认领学院 → 认领部门两级联动，默认本部门
+                    var cCollege = document.getElementById("c-college");
+                    var cDept = document.getElementById("c-dept");
+                    var collegeData = [];
+                    if (cCollege && cDept) {
+                        API.colleges().then(function (data) {
+                            collegeData = data.filter(function (c) { return c.status === "active"; });
+                            cCollege.innerHTML = collegeData
+                                .map(function (c) {
+                                    return '<option value="' + c.id + '">' + PAIP.escapeHtml(c.name) + "</option>";
+                                })
+                                .join("");
+                            if (user.college_id) cCollege.value = user.college_id;
+                            fillDepts(user.department_id);
+                        });
+                        cCollege.addEventListener("change", function () {
+                            fillDepts(null);
+                        });
+                    }
+
+                    function fillDepts(selectedId) {
+                        var cid = parseInt(cCollege.value, 10);
+                        var college = collegeData.filter(function (c) { return c.id === cid; })[0];
+                        var depts = (college ? college.departments : []).filter(function (d) {
+                            return d.status === "active";
+                        });
+                        cDept.innerHTML = depts
+                            .map(function (d) {
+                                return '<option value="' + d.id + '">' + PAIP.escapeHtml(d.name) + "</option>";
+                            })
+                            .join("");
+                        if (selectedId) cDept.value = selectedId;
+                    }
+
+                    recvBtn.onclick = function () {
+                        var qty = parseInt(document.getElementById("c-qty").value, 10);
+                        var name = document.getElementById("c-name").value.trim();
+                        var emp = document.getElementById("c-emp").value.trim();
+                        if (!qty || qty <= 0) return PAIP.toast("认领数量必须为大于 0 的正整数", "error");
+                        if (qty > a.remaining_count)
+                            return PAIP.toast("认领数量 " + qty + " 超过剩余数量 " + a.remaining_count, "error");
+                        if (!name || !emp) return PAIP.toast("请填写接收人姓名与工号", "error");
+                        var left = a.remaining_count - qty;
+                        preview.innerHTML =
+                            "本次接收 <b>" + qty + PAIP.escapeHtml(a.unit) + "</b>，" +
+                            "剩余将由 " + a.remaining_count + " 变为 <b>" + left + "</b>" +
+                            (left === 0 ? "（归零，确认后自动下架）" : "") +
+                            "。领取部门：" + PAIP.escapeHtml(user.dept_full_name || "-");
+                        preview.classList.remove("hidden");
+                        confirmBtn.classList.remove("hidden");
+                    };
+
+                    confirmBtn.onclick = function () {
+                        var payload = {
+                            asset_id: a.id,
+                            quantity: parseInt(document.getElementById("c-qty").value, 10),
+                            receiver_name: document.getElementById("c-name").value.trim(),
+                            receiver_emp_no: document.getElementById("c-emp").value.trim(),
+                            receiver_phone: document.getElementById("c-phone").value.trim(),
+                            remark: document.getElementById("c-remark").value.trim(),
+                        };
+                        if (cCollege && cDept && cDept.value) {
+                            payload.receiver_college_id = parseInt(cCollege.value, 10);
+                            payload.receiver_department_id = parseInt(cDept.value, 10);
+                        }
+                        confirmBtn.disabled = true;
+                        API.createClaim(payload)
+                            .then(function (res) {
+                                PAIP.toast("认领成功，已生成流转记录", "success");
+                                API.createHandover(res.claim.id)
+                                    .then(function (h) {
+                                        location.href = "/user/handover.html?no=" + encodeURIComponent(h.handover_no);
+                                    })
+                                    .catch(function () {
+                                        load();
+                                    });
+                            })
+                            .catch(function (e) {
+                                PAIP.toast(e.message, "error");
+                                confirmBtn.disabled = false;
+                            });
+                    };
+
+                }
+
+                load();
+            },
+        });
+    </script>
+</body>
+</html>

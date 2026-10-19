@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<!--
+  页面名称：我的记录页（转出 / 转入历史 + 交接单）
+  所属角色：部门用户
+  依赖 API：GET /api/claims/mine、GET /api/handovers、POST /api/handovers/{no}/print
+  导出说明：交接单支持浏览器打印；列表支持导出 CSV（前端生成，不依赖后端导出接口）
+-->
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>我的记录 · 公共资产闲置平台</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="/js/common.css" />
+</head>
+<body>
+    <div class="page">
+        <div class="flex flex-wrap items-end justify-between gap-3 mb-4">
+            <div>
+                <h1 class="page-title">我的记录</h1>
+                <div class="page-sub" id="dept-info">加载中...</div>
+            </div>
+            <div class="flex gap-2 no-print">
+                <a class="btn btn-outline btn-sm" href="/user/browse.html">返回平台</a>
+                <a class="btn btn-outline btn-sm" href="/user/home.html">我的工作台</a>
+            </div>
+        </div>
+
+        <div class="no-print mb-4 inline-flex rounded-lg border p-1 bg-white" style="border-color: var(--line)">
+            <button class="btn btn-sm" data-tab="out">本部门转出</button>
+            <button class="btn btn-outline btn-sm" data-tab="in">本部门转入</button>
+            <button class="btn btn-outline btn-sm" data-tab="handover">交接单</button>
+        </div>
+
+        <div class="toolbar no-print">
+            <div class="field">
+                <label class="label">资产编号</label>
+                <input class="input mono" id="f-asset-no" />
+            </div>
+            <div class="field">
+                <label class="label">资产名称</label>
+                <input class="input" id="f-asset-name" />
+            </div>
+            <div class="field">
+                <label class="label">对方部门</label>
+                <input class="input" id="f-dept" />
+            </div>
+            <div class="field">
+                <label class="label">交接单号</label>
+                <input class="input mono" id="f-handover-no" />
+            </div>
+            <div class="field">
+                <label class="label">起始日期</label>
+                <input class="input" id="f-start" type="date" />
+            </div>
+            <div class="field">
+                <label class="label">截止日期</label>
+                <input class="input" id="f-end" type="date" />
+            </div>
+            <button class="btn btn-sm" id="btn-search">查询</button>
+            <button class="btn btn-outline btn-sm" id="btn-reset">重置</button>
+            <button class="btn btn-outline btn-sm" id="btn-export">导出 CSV</button>
+        </div>
+
+        <div id="list"></div>
+    </div>
+
+    <script src="/js/api.js"></script>
+    <script src="/js/common.js"></script>
+    <script>
+        PAIP.boot({
+            role: "user",
+            active: "records",
+            init: function (user) {
+                document.getElementById("dept-info").textContent =
+                    "当前部门：" + (user.dept_full_name || "-") + " · " + user.name + " · 工号 " + (user.employee_no || "-");
+
+                var tab = "out";
+                var rows = [];
+
+                document.querySelectorAll("[data-tab]").forEach(function (b) {
+                    b.addEventListener("click", function () {
+                        tab = b.getAttribute("data-tab");
+                        document.querySelectorAll("[data-tab]").forEach(function (x) {
+                            x.className = "btn btn-outline btn-sm";
+                        });
+                        b.className = "btn btn-sm";
+                        load();
+                    });
+                });
+
+                function load() {
+                    if (tab === "handover") {
+                        API.listHandovers({
+                            asset_no: document.getElementById("f-asset-no").value.trim(),
+                            dept: document.getElementById("f-dept").value.trim(),
+                            start: document.getElementById("f-start").value,
+                            end: document.getElementById("f-end").value,
+                        }).then(function (list) {
+                            var kw = document.getElementById("f-handover-no").value.trim();
+                            if (kw) list = list.filter(function (h) {
+                                return (h.handover_no || "").indexOf(kw) >= 0;
+                            });
+                            renderHandovers(list);
+                        }).catch(function (e) {
+                            PAIP.toast(e.message, "error");
+                        });
+                        return;
+                    }
+                    API.myClaims(tab).then(function (list) {
+                        var assetNo = document.getElementById("f-asset-no").value.trim();
+                        var assetName = document.getElementById("f-asset-name").value.trim();
+                        var dept = document.getElementById("f-dept").value.trim();
+                        var start = document.getElementById("f-start").value;
+                        var end = document.getElementById("f-end").value;
+                        var hno = document.getElementById("f-handover-no").value.trim();
+                        list = list.filter(function (c) {
+                            if (assetNo && (c.asset_no || "").indexOf(assetNo) < 0) return false;
+                            if (assetName && (c.asset_name || "").indexOf(assetName) < 0) return false;
+                            if (dept) {
+                                var other = tab === "out" ? c.to_dept_name : c.from_dept_name;
+                                if ((other || "").indexOf(dept) < 0) return false;
+                            }
+                            if (start && c.claim_time < start) return false;
+                            if (end && c.claim_time > end + " 23:59:59") return false;
+                            if (hno && (c.handover_no || "").indexOf(hno) < 0) return false;
+                            return true;
+                        });
+                        renderClaims(list);
+                    }).catch(function (e) {
+                        PAIP.toast(e.message, "error");
+                    });
+                };
+
+                function renderClaims(list) {
+                    rows = list;
+                    var box = document.getElementById("list");
+                    if (!list.length) {
+                        box.innerHTML = '<div class="empty">暂无符合条件的记录</div>';
+                        return;
+                    }
+                    box.innerHTML =
+                        '<div class="card"><table class="table"><thead><tr>' +
+                        "<th>资产编号</th><th>资产名称</th><th>数量</th><th>转出部门</th><th>转入部门</th>" +
+                        "<th>接收人</th><th>工号</th><th>联系电话</th><th>时间</th><th>交接单号</th></tr></thead><tbody>" +
+                        list
+                            .map(function (c) {
+                                return (
+                                    "<tr><td class='mono'>" + PAIP.escapeHtml(c.asset_no) + "</td>" +
+                                    "<td>" + PAIP.escapeHtml(c.asset_name) + "</td>" +
+                                    "<td>" + c.quantity + PAIP.escapeHtml(c.unit || "") + "</td>" +
+                                    "<td>" + PAIP.escapeHtml(c.from_dept_name) + "</td>" +
+                                    "<td>" + PAIP.escapeHtml(c.to_dept_name) + "</td>" +
+                                    "<td>" + PAIP.escapeHtml(c.receiver_name) + "</td>" +
+                                    "<td class='mono'>" + PAIP.escapeHtml(c.receiver_emp_no) + "</td>" +
+                                    "<td class='mono'>" + PAIP.escapeHtml(c.receiver_phone || "-") + "</td>" +
+                                    "<td>" + PAIP.escapeHtml(c.claim_time) + "</td>" +
+                                    "<td>" + (c.handover_no
+                                        ? '<a href="/user/handover.html?no=' + encodeURIComponent(c.handover_no) + '">' +
+                                          PAIP.escapeHtml(c.handover_no) + "</a>"
+                                        : '<button class="btn btn-outline btn-sm" data-handover="' + c.id + '">生成交接单</button>') +
+                                    "</td></tr>"
+                                );
+                            })
+                            .join("") +
+                        "</tbody></table></div>";
+
+                    box.querySelectorAll("[data-handover]").forEach(function (b) {
+                        b.onclick = function () {
+                            API.createHandover(parseInt(b.getAttribute("data-handover"), 10))
+                                .then(function (h) {
+                                    PAIP.toast("交接单已生成：" + h.handover_no, "success");
+                                    location.href = "/user/handover.html?no=" + encodeURIComponent(h.handover_no);
+                                })
+                                .catch(function (e) {
+                                    PAIP.toast(e.message, "error");
+                                });
+                        };
+                    });
+                }
+
+                function renderHandovers(list) {
+                    rows = list;
+                    var box = document.getElementById("list");
+                    if (!list.length) {
+                        box.innerHTML = '<div class="empty">暂无交接单</div>';
+                        return;
+                    }
+                    box.innerHTML =
+                        '<div class="card"><table class="table"><thead><tr>' +
+                        "<th>交接单号</th><th>资产编号</th><th>资产名称</th><th>数量</th><th>转出部门</th>" +
+                        "<th>转入部门</th><th>接收人</th><th>生成时间</th><th>打印次数</th><th>操作</th></tr></thead><tbody>" +
+                        list
+                            .map(function (h) {
+                                return (
+                                    "<tr><td class='mono'><a href=\"/user/handover.html?no=" +
+                                    encodeURIComponent(h.handover_no) + '">' + PAIP.escapeHtml(h.handover_no) + "</a></td>" +
+                                    "<td class='mono'>" + PAIP.escapeHtml(h.asset_no || "-") + "</td>" +
+                                    "<td>" + PAIP.escapeHtml(h.asset_name || "-") + "</td>" +
+                                    "<td>" + h.quantity + PAIP.escapeHtml(h.unit || "") + "</td>" +
+                                    "<td>" + PAIP.escapeHtml(h.from_dept_name || "-") + "</td>" +
+                                    "<td>" + PAIP.escapeHtml(h.to_dept_name || "-") + "</td>" +
+                                    "<td>" + PAIP.escapeHtml(h.receiver_name || "-") + "</td>" +
+                                    "<td>" + PAIP.escapeHtml(h.generated_time || "-") + "</td>" +
+                                    "<td>" + h.print_count + "</td>" +
+                                    '<td><a class="btn btn-outline btn-sm" href="/user/handover.html?no=' +
+                                    encodeURIComponent(h.handover_no) + '">查看 / 打印</a></td></tr>'
+                                );
+                            })
+                            .join("") +
+                        "</tbody></table></div>";
+                }
+
+                document.getElementById("btn-search").addEventListener("click", load);
+                document.getElementById("btn-reset").addEventListener("click", function () {
+                    ["f-asset-no", "f-asset-name", "f-dept", "f-handover-no", "f-start", "f-end"].forEach(function (id) {
+                        document.getElementById(id).value = "";
+                    });
+                    load();
+                });
+
+                document.getElementById("btn-export").addEventListener("click", function () {
+                    if (tab === "handover") {
+                        exportCsv(
+                            "交接单导出",
+                            ["交接单号", "资产编号", "资产名称", "数量", "转出部门", "转入部门", "接收人", "工号", "生成时间", "打印次数"],
+                            rows
+                        );
+                        return;
+                    }
+                    var header = ["资产编号", "资产名称", "数量", "转出部门", "转入部门", "接收人", "工号", "联系电话", "时间", "交接单号"];
+                    exportCsv("流转记录导出", header, rows);
+                });
+
+                function exportCsv(filename, header, data) {
+                    if (!data.length) return PAIP.toast("当前没有可导出的记录", "error");
+                    var lines = [header.join(",")];
+                    data.forEach(function (r) {
+                        var vals = tab === "handover" && r.handover_no
+                            ? [r.handover_no, r.asset_no, r.asset_name, r.quantity + (r.unit || ""),
+                               r.from_dept_name, r.to_dept_name, r.receiver_name, r.receiver_emp_no,
+                               r.generated_time, r.print_count]
+                            : [r.asset_no, r.asset_name, r.quantity + (r.unit || ""), r.from_dept_name,
+                               r.to_dept_name, r.receiver_name, r.receiver_emp_no, r.receiver_phone,
+                               r.claim_time, r.handover_no || ""];
+                        lines.push(
+                            vals
+                                .map(function (v) {
+                                    return '"' + String(v === null || v === undefined ? "" : v).replace(/"/g, '""') + '"';
+                                })
+                                .join(",")
+                        );
+                    });
+                    var blob = new Blob(["\ufeff" + lines.join("\r\n")], { type: "text/csv;charset=utf-8" });
+                    var a = document.createElement("a");
+                    a.href = URL.createObjectURL(blob);
+                    a.download = filename + "_" + Date.now() + ".csv";
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                }
+
+                load();
+            },
+        });
+    </script>
+</body>
+</html>

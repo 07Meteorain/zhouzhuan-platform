@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<!--
+  页面名称：部门用户首页（我的发布 / 我的认领）
+  所属角色：部门用户（专业学院 + 下设部门）
+  依赖 API：GET /api/auth/me、GET /api/assets/mine、GET /api/claims/mine
+           POST /api/assets/{id}/unlist、POST /api/assets/{id}/relist
+-->
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>首页 · 公共资产闲置平台</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="/js/common.css" />
+</head>
+<body>
+    <div class="page">
+        <div class="flex flex-wrap items-end justify-between gap-3 mb-4">
+            <div>
+                <h1 class="page-title">我的工作台</h1>
+                <div class="page-sub" id="dept-info">加载中...</div>
+            </div>
+            <div class="flex gap-2 no-print">
+                <a class="btn" href="/user/publish.html">+ 发布物资</a>
+                <a class="btn btn-outline" href="/user/browse.html">去平台浏览</a>
+            </div>
+        </div>
+
+        <div class="no-print mb-4 inline-flex rounded-lg border p-1 bg-white" style="border-color: var(--line)">
+            <button class="btn btn-sm" id="tab-publish">我的发布</button>
+            <button class="btn btn-outline btn-sm" id="tab-claim">我的认领</button>
+        </div>
+
+        <div id="panel-publish">
+            <div id="publish-list" class="grid-cards"></div>
+        </div>
+
+        <div id="panel-claim" class="hidden">
+            <div class="toolbar no-print">
+                <div class="field">
+                    <label class="label">方向</label>
+                    <select class="select" id="claim-direction">
+                        <option value="in">本部门转入（我认领的）</option>
+                        <option value="out">本部门转出（被认领的）</option>
+                        <option value="all">全部</option>
+                    </select>
+                </div>
+                <button class="btn btn-outline btn-sm" id="btn-claim-query">查询</button>
+                <a class="btn btn-outline btn-sm" href="/user/records.html">完整记录页</a>
+            </div>
+            <div id="claim-list"></div>
+        </div>
+    </div>
+
+    <script src="/js/api.js"></script>
+    <script src="/js/common.js"></script>
+    <script>
+        PAIP.boot({
+            role: "user",
+            active: "home",
+            init: function (user) {
+                document.getElementById("dept-info").textContent =
+                    "当前部门：" + (user.dept_full_name || "-") + " · " + user.name + " · 工号 " + (user.employee_no || "-");
+
+                var tabPublish = document.getElementById("tab-publish");
+                var tabClaim = document.getElementById("tab-claim");
+
+                function switchTab(which) {
+                    if (which === "publish") {
+                        tabPublish.className = "btn btn-sm";
+                        tabClaim.className = "btn btn-outline btn-sm";
+                        document.getElementById("panel-publish").classList.remove("hidden");
+                        document.getElementById("panel-claim").classList.add("hidden");
+                    } else {
+                        tabClaim.className = "btn btn-sm";
+                        tabPublish.className = "btn btn-outline btn-sm";
+                        document.getElementById("panel-claim").classList.remove("hidden");
+                        document.getElementById("panel-publish").classList.add("hidden");
+                    }
+                }
+
+                tabPublish.addEventListener("click", function () {
+                    switchTab("publish");
+                });
+                tabClaim.addEventListener("click", function () {
+                    switchTab("claim");
+                    loadClaims();
+                });
+
+                // ---------- 我的发布 ----------
+                function loadPublished() {
+                    API.myAssets().then(function (list) {
+                        var box = document.getElementById("publish-list");
+                        if (!list.length) {
+                            box.innerHTML = '<div class="empty">暂无发布记录，点击右上角「发布物资」开始</div>';
+                            return;
+                        }
+                        box.innerHTML = list
+                            .map(function (a) {
+                                var op =
+                                    a.status === "on"
+                                        ? '<button class="btn btn-outline btn-sm" data-off="' + a.id + '">下架</button>'
+                                        : '<button class="btn btn-success btn-sm" data-relist="' + a.id + '">重新挂牌</button>';
+                                return (
+                                    '<div class="card">' +
+                                    '<img class="thumb" src="' + (a.cover || "") + '" alt="' + PAIP.escapeHtml(a.name) + '" />' +
+                                    '<div class="card-body">' +
+                                    '<div class="card-title">' + PAIP.escapeHtml(a.name) + " " + PAIP.statusBadge(a.status) + "</div>" +
+                                    '<div class="muted mono" style="font-size:12px">' + PAIP.escapeHtml(a.asset_no) + "</div>" +
+                                    '<div style="margin-top:8px;font-size:13px">' +
+                                    "分类：" + PAIP.escapeHtml(a.category || "-") + " · 单位：" + PAIP.escapeHtml(a.unit) +
+                                    "</div>" +
+                                    '<div style="font-size:13px;margin-top:2px">' +
+                                    "总数 <b>" + a.total_count + "</b> · 已认领 <b>" + a.claimed_count +
+                                    "</b> · 剩余 <b style='color:#dc2626'>" + a.remaining_count + "</b>" +
+                                    "</div>" +
+                                    '<div class="muted" style="font-size:12px;margin-top:4px">存放：' +
+                                    PAIP.escapeHtml(a.location || "-") + "</div>" +
+                                    '<div style="margin-top:10px;display:flex;gap:8px">' +
+                                    '<a class="btn btn-outline btn-sm" href="/user/asset.html?id=' + a.id + '">查看详情</a>' +
+                                    op +
+                                    "</div>" +
+                                    "</div></div>"
+                                );
+                            })
+                            .join("");
+
+                        box.querySelectorAll("[data-off]").forEach(function (b) {
+                            b.onclick = function () {
+                                PAIP.confirmBox("下架确认", "确认下架该物资？下架后其他部门将无法认领。", function () {
+                                    API.unlistAsset(b.getAttribute("data-off"))
+                                        .then(function () {
+                                            PAIP.toast("已下架", "success");
+                                            loadPublished();
+                                        })
+                                        .catch(function (e) {
+                                            PAIP.toast(e.message, "error");
+                                        });
+                                });
+                            };
+                        });
+                        box.querySelectorAll("[data-relist]").forEach(function (b) {
+                            b.onclick = function () {
+                                API.relistAsset(b.getAttribute("data-relist"))
+                                    .then(function () {
+                                        PAIP.toast("已重新挂牌", "success");
+                                        loadPublished();
+                                    })
+                                    .catch(function (e) {
+                                        PAIP.toast(e.message, "error");
+                                    });
+                            };
+                        });
+                    });
+                }
+
+                // ---------- 我的认领 ----------
+                function loadClaims() {
+                    var dir = document.getElementById("claim-direction").value;
+                    API.myClaims(dir).then(function (list) {
+                        var box = document.getElementById("claim-list");
+                        if (!list.length) {
+                            box.innerHTML = '<div class="empty">暂无流转记录</div>';
+                            return;
+                        }
+                        box.innerHTML =
+                            '<div class="card"><table class="table"><thead><tr>' +
+                            "<th>资产编号</th><th>资产名称</th><th>数量</th><th>转出部门</th><th>转入部门</th>" +
+                            "<th>接收人</th><th>时间</th><th>交接单</th></tr></thead><tbody>" +
+                            list
+                                .map(function (c) {
+                                    return (
+                                        "<tr><td class='mono'>" + PAIP.escapeHtml(c.asset_no) + "</td>" +
+                                        "<td>" + PAIP.escapeHtml(c.asset_name) + "</td>" +
+                                        "<td>" + c.quantity + PAIP.escapeHtml(c.unit || "") + "</td>" +
+                                        "<td>" + PAIP.escapeHtml(c.from_dept_name) + "</td>" +
+                                        "<td>" + PAIP.escapeHtml(c.to_dept_name) + "</td>" +
+                                        "<td>" + PAIP.escapeHtml(c.receiver_name) + "<br/><span class='muted mono'>" +
+                                        PAIP.escapeHtml(c.receiver_emp_no) + "</span></td>" +
+                                        "<td>" + PAIP.escapeHtml(c.claim_time) + "</td>" +
+                                        "<td>" + (c.handover_no
+                                            ? '<a href="/user/handover.html?no=' + encodeURIComponent(c.handover_no) + '">' +
+                                              PAIP.escapeHtml(c.handover_no) + "</a>"
+                                            : '<button class="btn btn-outline btn-sm" data-handover="' + c.id + '">生成交接单</button>') +
+                                        "</td></tr>"
+                                    );
+                                })
+                                .join("") +
+                            "</tbody></table></div>";
+
+                        box.querySelectorAll("[data-handover]").forEach(function (b) {
+                            b.onclick = function () {
+                                API.createHandover(parseInt(b.getAttribute("data-handover"), 10))
+                                    .then(function (h) {
+                                        PAIP.toast("交接单已生成：" + h.handover_no, "success");
+                                        location.href = "/user/handover.html?no=" + encodeURIComponent(h.handover_no);
+                                    })
+                                    .catch(function (e) {
+                                        PAIP.toast(e.message, "error");
+                                    });
+                            };
+                        });
+                    });
+                }
+
+                document.getElementById("btn-claim-query").addEventListener("click", loadClaims);
+
+                loadPublished();
+            },
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<!--
+  页面名称：用户与工号管理
+  所属角色：平台管理员
+  依赖 API：GET /api/admin/users、POST /api/admin/users、PUT /api/admin/users/{id}、
+           POST /api/admin/users/{id}/status、GET /api/colleges
+-->
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>用户管理 · 公共资产闲置平台</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="/js/common.css" />
+</head>
+<body>
+    <div class="page">
+        <h1 class="page-title">用户与工号管理</h1>
+        <div class="page-sub">维护账号、工号与所属“学院 / 部门”；工号唯一，部门必须有效。</div>
+
+        <!-- 新增用户 -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <h2 class="card-title">新增用户</h2>
+                <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                    <div class="field"><label class="label">登录账号 *</label><input class="input" id="n-username" /></div>
+                    <div class="field"><label class="label">登录口令 *</label><input class="input" id="n-password" value="123456" /></div>
+                    <div class="field"><label class="label">姓名 *</label><input class="input" id="n-name" /></div>
+                    <div class="field"><label class="label">工号 *</label><input class="input mono" id="n-emp" /></div>
+                    <div class="field"><label class="label">联系电话</label><input class="input mono" id="n-phone" /></div>
+                    <div class="field"><label class="label">角色</label>
+                        <select class="select" id="n-role"><option value="user">部门用户</option><option value="admin">平台管理员</option></select>
+                    </div>
+                    <div class="field"><label class="label">所属学院</label><select class="select" id="n-college"></select></div>
+                    <div class="field"><label class="label">所属部门</label><select class="select" id="n-dept"></select></div>
+                </div>
+                <button class="btn btn-sm" id="btn-create">新增</button>
+            </div>
+        </div>
+
+        <!-- 查询 -->
+        <div class="toolbar no-print">
+            <div class="field"><label class="label">关键字（账号/姓名/工号/部门）</label><input class="input" id="f-kw" /></div>
+            <button class="btn btn-sm" id="btn-search">查询</button>
+            <button class="btn btn-outline btn-sm" id="btn-refresh">刷新</button>
+        </div>
+
+        <div id="user-list"></div>
+    </div>
+
+    <script src="/js/api.js"></script>
+    <script src="/js/common.js"></script>
+    <script>
+        PAIP.boot({
+            role: "admin",
+            active: "users",
+            init: function () {
+                var box = document.getElementById("user-list");
+                var colleges = [];
+                var collegeSel = document.getElementById("n-college");
+                var deptSel = document.getElementById("n-dept");
+
+                API.colleges().then(function (data) {
+                    colleges = data;
+                    collegeSel.innerHTML = data
+                        .map(function (c) { return '<option value="' + c.id + '">' + PAIP.escapeHtml(c.name) + "</option>"; })
+                        .join("");
+                    renderDept();
+                });
+                collegeSel.addEventListener("change", renderDept);
+
+                function renderDept() {
+                    var cid = parseInt(collegeSel.value, 10);
+                    var college = colleges.filter(function (c) { return c.id === cid; })[0];
+                    var depts = college ? college.departments : [];
+                    deptSel.innerHTML = depts
+                        .map(function (d) { return '<option value="' + d.id + '">' + PAIP.escapeHtml(d.name) + "</option>"; })
+                        .join("");
+                }
+
+                function load() {
+                    API.listUsers(document.getElementById("f-kw").value.trim())
+                        .then(render)
+                        .catch(function (e) { PAIP.toast(e.message, "error"); });
+                }
+
+                function render(list) {
+                    window.__users = list;
+                    if (!list.length) {
+                        box.innerHTML = '<div class="empty">暂无用户</div>';
+                        return;
+                    }
+                    box.innerHTML =
+                        '<div class="card"><table class="table"><thead><tr>' +
+                        "<th>账号</th><th>姓名</th><th>工号</th><th>电话</th><th>角色</th><th>所属学院</th>" +
+                        "<th>所属部门</th><th>状态</th><th style=\"width:180px\">操作</th></tr></thead><tbody>" +
+                        list.map(function (u) {
+                            return (
+                                "<tr><td class='mono'>" + PAIP.escapeHtml(u.username) + "</td>" +
+                                "<td>" + PAIP.escapeHtml(u.name) + "</td>" +
+                                "<td class='mono'>" + PAIP.escapeHtml(u.employee_no) + "</td>" +
+                        "<td class='mono'>" + PAIP.escapeHtml(u.phone || "-") + "</td>" +
+                                "<td>" + (u.role === "admin"
+                                    ? '<span class="badge badge-info">管理员</span>'
+                                    : '<span class="badge badge-on">部门用户</span>') + "</td>" +
+                                "<td>" + PAIP.escapeHtml(u.college_name || "-") + "</td>" +
+                                "<td>" + PAIP.escapeHtml(u.department_name || "-") + "</td>" +
+                                "<td>" + PAIP.statusBadge(u.status) + "</td>" +
+                                "<td>" +
+                                '<button class="btn btn-outline btn-sm" data-edit="' + u.id + '">编辑</button> ' +
+                                '<button class="btn btn-sm ' + (u.status === "active" ? "btn-outline" : "btn-success") +
+                                '" data-st="' + u.id + '" data-s="' + (u.status === "active" ? "disabled" : "active") +
+                                '">' + (u.status === "active" ? "停用" : "启用") + "</button>" +
+                                "</td></tr>"
+                            );
+                        }).join("") +
+                        "</tbody></table></div>";
+                    bind();
+                }
+
+                function bind() {
+                    box.querySelectorAll("[data-st]").forEach(function (b) {
+                        b.onclick = function () {
+                            API.setUserStatus(parseInt(b.getAttribute("data-st"), 10), b.getAttribute("data-s"))
+                                .then(function () {
+                                    PAIP.toast("操作成功", "success");
+                                    load();
+                                })
+                                .catch(function (e) { PAIP.toast(e.message, "error"); });
+                        };
+                    });
+                    box.querySelectorAll("[data-edit]").forEach(function (b) {
+                        b.onclick = function () {
+                            var id = parseInt(b.getAttribute("data-edit"), 10);
+                            var u = (window.__users || []).filter(function (x) { return x.id === id; })[0];
+                            if (!u) return;
+                            openEdit(u);
+                        };
+                    });
+                }
+
+                function openEdit(u) {
+                    var content =
+                        '<div class="grid grid-cols-1 md:grid-cols-2 gap-3">' +
+                        '<div class="field"><label class="label">姓名</label><input class="input" id="e-name" value="' + PAIP.escapeHtml(u.name) + '" /></div>' +
+                        '<div class="field"><label class="label">工号</label><input class="input mono" id="e-emp" value="' + PAIP.escapeHtml(u.employee_no) + '" /></div>' +
+                        '<div class="field"><label class="label">电话</label><input class="input mono" id="e-phone" value="' + PAIP.escapeHtml(u.phone || "") + '" /></div>' +
+                        '<div class="field"><label class="label">角色</label><select class="select" id="e-role">' +
+                        '<option value="user"' + (u.role === "user" ? " selected" : "") + '>部门用户</option>' +
+                        '<option value="admin"' + (u.role === "admin" ? " selected" : "") + '>平台管理员</option></select></div>' +
+                        '<div class="field"><label class="label">所属学院</label><select class="select" id="e-college"></select></div>' +
+                        '<div class="field"><label class="label">所属部门</label><select class="select" id="e-dept"></select></div>' +
+                        '<div class="field"><label class="label">状态</label><select class="select" id="e-status">' +
+                        '<option value="active"' + (u.status === "active" ? " selected" : "") + '>启用</option>' +
+                        '<option value="disabled"' + (u.status === "disabled" ? " selected" : "") + '>停用</option></select></div>' +
+                        '<div class="field"><label class="label">重置口令（留空不修改）</label><input class="input" id="e-pwd" /></div>' +
+                        "</div>";
+
+                    var footer =
+                        '<div style="display:flex;gap:8px;justify-content:flex-end">' +
+                        '<button class="btn btn-outline btn-sm" onclick="PAIP.closeModal()">取消</button>' +
+                        '<button class="btn btn-sm" id="e-save">保存</button></div>';
+
+                    PAIP.openModal("编辑用户 · " + u.username, content, footer);
+
+                    var cSel = document.getElementById("e-college");
+                    var dSel = document.getElementById("e-dept");
+                    cSel.innerHTML = colleges
+                        .map(function (c) {
+                            return '<option value="' + c.id + '"' + (c.id === u.college_id ? " selected" : "") + ">" +
+                                PAIP.escapeHtml(c.name) + "</option>";
+                        })
+                        .join("");
+
+                    function fillDepts() {
+                        var cid = parseInt(cSel.value, 10);
+                        var college = colleges.filter(function (c) { return c.id === cid; })[0];
+                        var depts = college ? college.departments : [];
+                        dSel.innerHTML = depts
+                            .map(function (d) {
+                                return '<option value="' + d.id + '"' + (d.id === u.department_id ? " selected" : "") + ">" +
+                                    PAIP.escapeHtml(d.name) + "</option>";
+                            })
+                            .join("");
+                    }
+                    fillDepts();
+                    cSel.addEventListener("change", fillDepts);
+
+                    document.getElementById("e-save").onclick = function () {
+                        var payload = {
+                            name: document.getElementById("e-name").value.trim(),
+                            employee_no: document.getElementById("e-emp").value.trim(),
+                            phone: document.getElementById("e-phone").value.trim(),
+                            role: document.getElementById("e-role").value,
+                            status: document.getElementById("e-status").value,
+                            college_id: parseInt(document.getElementById("e-college").value, 10),
+                            department_id: parseInt(document.getElementById("e-dept").value, 10),
+                        };
+                        var pwd = document.getElementById("e-pwd").value;
+                        if (pwd) payload.password = pwd;
+                        API.updateUser(u.id, payload)
+                            .then(function () {
+                                PAIP.closeModal();
+                                PAIP.toast("已保存", "success");
+                                load();
+                            })
+                            .catch(function (e) { PAIP.toast(e.message, "error"); });
+                    };
+                }
+
+                document.getElementById("btn-create").onclick = function () {
+                    var payload = {
+                        username: document.getElementById("n-username").value.trim(),
+                        password: document.getElementById("n-password").value,
+                        name: document.getElementById("n-name").value.trim(),
+                        employee_no: document.getElementById("n-emp").value.trim(),
+                        phone: document.getElementById("n-phone").value.trim(),
+                        role: "user",
+                        college_id: parseInt(collegeSel.value, 10),
+                        department_id: parseInt(deptSel.value, 10),
+                    };
+                    if (!payload.username || !payload.name || !payload.employee_no) {
+                        PAIP.toast("请填写账号、姓名与工号", "error");
+                        return;
+                    }
+                    API.createUser(payload)
+                        .then(function () {
+                            ["n-username", "n-name", "n-emp", "n-phone"].forEach(function (id) {
+                                document.getElementById(id).value = "";
+                            });
+                            PAIP.toast("用户已新增", "success");
+                            load();
+                        })
+                        .catch(function (e) { PAIP.toast(e.message, "error"); });
+                };
+
+                document.getElementById("btn-search").onclick = load;
+                document.getElementById("btn-refresh").onclick = load;
+
+                load();
+            },
+        });
+    </script>
+</body>
+</html>

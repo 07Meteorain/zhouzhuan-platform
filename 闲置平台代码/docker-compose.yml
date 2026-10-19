@@ -1,0 +1,51 @@
+# 公共资产闲置平台 —— 一键编排
+# 启动： docker compose up --build
+# 访问： 前端 http://localhost:3000   后端接口 http://localhost:8000/docs
+#
+# 说明：
+#   - 后端首次启动自动建表（SQLite），若用户表为空则执行 database/seed.py 注入种子数据
+#   - 数据持久化在 ./database/data 目录（app.db 与 uploads 图片）
+#   - 环境变量默认值均可被仓库根目录的 .env 覆盖（cp .env.example .env）
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: paip-backend
+    environment:
+      # 数据库（SQLite 单文件）
+      DATABASE_PATH: ${DATABASE_PATH:-/app/data/app.db}
+      # 图片本地存储目录
+      UPLOAD_DIR: ${UPLOAD_DIR:-/app/data/uploads}
+      # 种子脚本与种子图片目录
+      SEED_SCRIPT: ${SEED_SCRIPT:-/app/database/seed.py}
+      SEED_IMAGE_DIR: ${SEED_IMAGE_DIR:-/app/database/seed_images}
+      # 会话密钥
+      SECRET_KEY: ${SECRET_KEY:-public-asset-idle-platform-dev-secret}
+      JWT_ALGORITHM: ${JWT_ALGORITHM:-HS256}
+      JWT_EXPIRE_HOURS: ${JWT_EXPIRE_HOURS:-12}
+      CORS_ORIGINS: ${CORS_ORIGINS:-*}
+      TZ: Asia/Shanghai
+    volumes:
+      - ./database/data:/app/data
+      - ./database:/app/database:ro
+    ports:
+      - "8000:8000"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request;urllib.request.urlopen('http://localhost:8000/api/health').read()\""]
+      interval: 20s
+      timeout: 5s
+      retries: 5
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: paip-frontend
+    depends_on:
+      - backend
+    ports:
+      - "3000:3000"
+    restart: unless-stopped

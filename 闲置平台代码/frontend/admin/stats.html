@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<!--
+  页面名称：统计报表
+  所属角色：平台管理员
+  依赖 API：GET /api/admin/stats/overview、GET /api/admin/stats/assets、
+           GET /api/admin/stats/departments、GET /api/admin/stats/export
+  说明：所有指标实时聚合自数据库，无预置数据
+-->
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>统计报表 · 公共资产闲置平台</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="/js/common.css" />
+</head>
+<body>
+    <div class="page">
+        <h1 class="page-title">统计报表</h1>
+        <div class="page-sub">物资流转与部门间调动统计，支持按资产编号、名称、使用管理部门、时间筛选并导出 CSV。</div>
+
+        <div id="overview" class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4"></div>
+
+        <!-- 资产维度 -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <div class="flex flex-wrap items-end justify-between gap-2 mb-3">
+                    <h2 class="card-title" style="margin:0">按资产统计</h2>
+                    <div class="flex gap-2 items-end flex-wrap">
+                        <input class="input" id="f-kw" placeholder="资产编号 / 名称" style="width:180px" />
+                        <input class="input" id="f-manage" placeholder="使用管理部门" style="width:180px" />
+                        <input class="input" id="f-start" type="date" style="width:150px" />
+                        <input class="input" id="f-end" type="date" style="width:150px" />
+                        <button class="btn btn-sm" id="btn-search">查询</button>
+                        <button class="btn btn-outline btn-sm" id="btn-export-assets">导出 CSV</button>
+                    </div>
+                </div>
+                <div id="asset-stats"></div>
+            </div>
+        </div>
+
+        <!-- 部门维度 -->
+        <div class="card">
+            <div class="card-body">
+                <div class="flex flex-wrap items-end justify-between gap-2 mb-3">
+                    <h2 class="card-title" style="margin:0">按部门统计（部门间调动）</h2>
+                    <button class="btn btn-outline btn-sm" id="btn-export-depts">导出 CSV</button>
+                </div>
+                <div id="dept-stats"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/js/api.js"></script>
+    <script src="/js/common.js"></script>
+    <script>
+        PAIP.boot({
+            role: "admin",
+            active: "stats",
+            init: function () {
+                function statCard(label, value) {
+                    return (
+                        '<div class="stat"><div class="stat-label">' + PAIP.escapeHtml(label) +
+                        '</div><div class="stat-value">' + value + "</div></div>"
+                    );
+                }
+
+                function loadOverview() {
+                    API.statsOverview().then(function (o) {
+                        document.getElementById("overview").innerHTML =
+                            statCard("物资总数", o.asset_total) +
+                            statCard("上架中", o.asset_on) +
+                            statCard("已下架", o.asset_off) +
+                            statCard("已停用", o.asset_disabled) +
+                            statCard("认领笔数", o.claim_count) +
+                            statCard("流转总量", o.transfer_quantity) +
+                            statCard("专业学院", o.college_count) +
+                            statCard("下设部门 / 用户", o.department_count + " / " + o.user_count);
+                    });
+                }
+
+                function loadAssets() {
+                    API.statsAssets({
+                        keyword: document.getElementById("f-kw").value.trim(),
+                        manage_dept: document.getElementById("f-manage").value.trim(),
+                        start: document.getElementById("f-start").value,
+                        end: document.getElementById("f-end").value,
+                    })
+                        .then(function (rows) {
+                            var box = document.getElementById("asset-stats");
+                            if (!rows.length) {
+                                box.innerHTML = '<div class="empty">暂无数据</div>';
+                                return;
+                            }
+                            box.innerHTML =
+                                '<table class="table"><thead><tr><th>资产编号</th><th>资产名称</th><th>分类</th>' +
+                                "<th>使用管理部门</th><th>发布部门</th><th>总数</th><th>已认领</th><th>剩余</th>" +
+                                "<th>状态</th><th>发布时间</th></tr></thead><tbody>" +
+                                rows
+                                    .map(function (r) {
+                                        return (
+                                            "<tr><td class='mono'>" + PAIP.escapeHtml(r.asset_no) + "</td>" +
+                                            "<td>" + PAIP.escapeHtml(r.asset_name) + "</td>" +
+                                            "<td>" + PAIP.escapeHtml(r.category || "-") + "</td>" +
+                                            "<td>" + PAIP.escapeHtml(r.manage_dept || "-") + "</td>" +
+                                            "<td>" + PAIP.escapeHtml(r.dept_full_name) + "</td>" +
+                                            "<td>" + r.total_count + "</td>" +
+                                            "<td>" + r.claimed_count + "</td>" +
+                                            "<td><b>" + r.remaining_count + "</b></td>" +
+                                            "<td>" + PAIP.statusBadge(r.status) + "</td>" +
+                                            "<td class='mono'>" + PAIP.escapeHtml(r.publish_time) + "</td></tr>"
+                                        );
+                                    })
+                                    .join("") +
+                                "</tbody></table>";
+                        })
+                        .catch(function (e) { PAIP.toast(e.message, "error"); });
+                }
+
+                function loadDepts() {
+                    API.statsDepartments()
+                        .then(function (rows) {
+                            var box = document.getElementById("dept-stats");
+                            if (!rows.length) {
+                                box.innerHTML = '<div class="empty">暂无数据</div>';
+                                return;
+                            }
+                            box.innerHTML =
+                                '<table class="table"><thead><tr><th>专业学院</th><th>下设部门</th><th>发布物资数</th>' +
+                                "<th>转出笔数 / 数量</th><th>转入笔数 / 数量</th><th>状态</th></tr></thead><tbody>" +
+                                rows
+                                    .map(function (r) {
+                                        return (
+                                            "<tr><td>" + PAIP.escapeHtml(r.college_name) + "</td>" +
+                                            "<td>" + PAIP.escapeHtml(r.department_name) + "</td>" +
+                                            "<td>" + r.published_assets + "</td>" +
+                                            "<td>" + r.out_count + " / " + r.out_quantity + "</td>" +
+                                            "<td>" + r.in_count + " / " + r.in_quantity + "</td>" +
+                                            "<td>" + PAIP.statusBadge(r.status) + "</td></tr>"
+                                        );
+                                    })
+                                    .join("") +
+                                "</tbody></table>";
+                        })
+                        .catch(function (e) { PAIP.toast(e.message, "error"); });
+                }
+
+                document.getElementById("btn-search").onclick = function () {
+                    loadAssets();
+                    loadDepts();
+                };
+                document.getElementById("btn-export-assets").onclick = function () {
+                    var btn = this;
+                    btn.disabled = true;
+                    // 必须带 JWT 下载：location.href 跳转不带 Authorization 头会被 401 拒绝
+                    PAIP.downloadFile(
+                        "/api/admin/stats/export" +
+                            PAIP.toQuery({
+                                type: "assets",
+                                keyword: document.getElementById("f-kw").value.trim(),
+                                manage_dept: document.getElementById("f-manage").value.trim(),
+                                start: document.getElementById("f-start").value,
+                                end: document.getElementById("f-end").value,
+                            }),
+                        "物资统计.csv"
+                    )
+                        .then(function () {
+                            PAIP.toast("统计已导出", "success");
+                            btn.disabled = false;
+                        })
+                        .catch(function (e) {
+                            PAIP.toast(e.message, "error");
+                            btn.disabled = false;
+                        });
+                };
+                document.getElementById("btn-export-depts").onclick = function () {
+                    var btn = this;
+                    btn.disabled = true;
+                    PAIP.downloadFile(
+                        "/api/admin/stats/export" + PAIP.toQuery({ type: "departments" }),
+                        "部门统计.csv"
+                    )
+                        .then(function () {
+                            PAIP.toast("统计已导出", "success");
+                            btn.disabled = false;
+                        })
+                        .catch(function (e) {
+                            PAIP.toast(e.message, "error");
+                            btn.disabled = false;
+                        });
+                };
+
+                loadOverview();
+                loadAssets();
+                loadDepts();
+            },
+        });
+    </script>
+</body>
+</html>

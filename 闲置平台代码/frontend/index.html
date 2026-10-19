@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<!--
+  页面名称：登录页
+  所属角色：所有用户（部门用户 / 平台管理员）
+  依赖 API：POST /api/auth/login、GET /api/auth/me
+-->
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>登录 · 公共资产闲置平台</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="/js/common.css" />
+</head>
+<body class="bg-slate-100">
+    <div class="min-h-screen flex items-center justify-center p-4">
+        <div class="w-full max-w-md">
+            <div class="card p-6">
+                <h1 class="text-xl font-bold text-blue-700 mb-1">公共资产闲置平台</h1>
+                <p class="muted text-xs mb-5">部门用户发布与认领闲置资产 · 管理员负责架构、核验与留痕</p>
+
+                <div id="err" class="alert alert-error hidden"></div>
+
+                <form id="login-form" autocomplete="off">
+                    <div class="field">
+                        <label class="label" for="username">登录账号</label>
+                        <input class="input" id="username" name="username" placeholder="如 user1 / admin1" required />
+                    </div>
+                    <div class="field">
+                        <label class="label" for="password">登录口令</label>
+                        <input class="input" id="password" name="password" type="password" placeholder="如 123456" required />
+                    </div>
+                    <button class="btn w-full" id="btn-login" type="submit">登 录</button>
+                </form>
+
+                <div class="mt-5 pt-4 border-t" style="border-color: var(--line)">
+                    <div class="text-xs muted mb-2">测试账号（点击自动填充）</div>
+                    <div class="flex flex-wrap gap-2">
+                        <button class="btn btn-outline btn-sm" data-u="user1" data-p="123456">user1（智能制造学院/实训中心）</button>
+                        <button class="btn btn-outline btn-sm" data-u="user2" data-p="123456">user2（信息技术学院/网络运维部）</button>
+                        <button class="btn btn-outline btn-sm" data-u="admin1" data-p="123456">admin1（平台管理员）</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/js/api.js"></script>
+    <script src="/js/common.js"></script>
+    <script>
+        (function () {
+            // 已登录则直接进入对应首页
+            if (API.getToken()) {
+                API.me()
+                    .then(function (u) {
+                        location.href = u.role === "admin" ? "/admin/orgs.html" : "/user/home.html";
+                    })
+                    .catch(function () {
+                        API.clearSession();
+                    });
+            }
+
+            document.querySelectorAll("[data-u]").forEach(function (btn) {
+                btn.addEventListener("click", function () {
+                    document.getElementById("username").value = btn.getAttribute("data-u");
+                    document.getElementById("password").value = btn.getAttribute("data-p");
+                });
+            });
+
+            document.getElementById("login-form").addEventListener("submit", function (e) {
+                e.preventDefault();
+                var btn = document.getElementById("btn-login");
+                var err = document.getElementById("err");
+                err.classList.add("hidden");
+                btn.disabled = true;
+                btn.textContent = "登录中...";
+                API.login(
+                    document.getElementById("username").value.trim(),
+                    document.getElementById("password").value
+                )
+                    .then(function (data) {
+                        API.setSession(data.token, data.user);
+                        location.href = data.user.role === "admin" ? "/admin/orgs.html" : "/user/home.html";
+                    })
+                    .catch(function (e2) {
+                        err.textContent = e2.message || "登录失败";
+                        err.classList.remove("hidden");
+                        btn.disabled = false;
+                        btn.textContent = "登 录";
+                    });
+            });
+        })();
+    </script>
+</body>
+</html>
